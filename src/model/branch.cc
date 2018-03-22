@@ -2,6 +2,7 @@
  * Copyright (c) 2016 UFPI (Universidade Federal do Piauí)
  * Author: Thiago Allisson <allissonribeiro02@gmail.com>
  * Author: Enza Rafaela <enzasampaiof@hotmail.com>
+ * Author: Rafael <enzasampaiof@hotmail.com>
  */
 
 #include "branch.h"
@@ -80,10 +81,10 @@ double Branch::CalcL(double vK, double vM, double aK, double aM) {
 }
 
 void Branch::Print(void) {
-	std::cout << "Branch ( " << m_branch.m_ni << ", " << m_branch.m_nf
-			<< ") => " << m_branch.m_b << "\t" << m_branch.m_bsh << "\t"
-			<< m_branch.m_g << "\t" << m_branch.m_tap << "\t" << m_branch.m_def
-			<< std::endl;
+	std::cout << "Branch (" << m_branch.m_ni << ", " << m_branch.m_nf
+			<< ") => {" << m_branch.m_b << ", " << m_branch.m_bsh << ", "
+			<< m_branch.m_g << ", " << m_branch.m_tap << ", " << m_branch.m_def
+			<< "}" << std::endl;
 }
 
 }

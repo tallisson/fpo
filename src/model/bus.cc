@@ -2,6 +2,7 @@
  * Copyright (c) 2016 UFPI (Universidade Federal do Piauí)
  * Author: Thiago Allisson <allissonribeiro02@gmail.com>
  * Author: Enza Rafaela <enzasampaiof@hotmail.com>
+ * Author: Rafael <enzasampaiof@hotmail.com>
  */
 
 #include "bus.h"
@@ -14,9 +15,20 @@
 namespace model {
 
 Bus::Bus() {
-	m_tap(Bus::IMP), m_crt(0.0);
+	m_tap = IMP;
+	m_crt = 0.0;
 	m_dsv = 0;
+	m_vCalc = 0.0;
+	m_aCalc = 0.0;
 	m_isControlled = false;
+	m_status = NORMAL;
+	m_type = NONE;
+	m_pgCalc = 0;
+	m_qgCalc = 0;
+	m_vCalc = 0;
+	m_aCalc = 0;
+	m_ordG = -1;
+	m_numControl = 0;
 }
 
 Bus::~Bus() {
@@ -49,12 +61,14 @@ std::vector<Branch*> Bus::GetBranches() const {
 
 double Bus::CalcPg(void) {
 	double pgK = 0;
-	for (int i = 0; i < m_branches.size(); i++) {
+	int size = m_branches.size();
+	for (int i = 0; i < size; i++) {
 		Branch* branch = m_branches.at(i);
 		Bus* busM = m_neighbors.at(i);
 		DBranch_t dataBranch = branch->GetBranch();
 
-		double aM, vM;
+		double aM = 0;
+		double vM = 0;
 		busM->SetACalc(aM);
 		busM->SetVCalc(vM);
 		double theta_km = m_aCalc - aM;
@@ -91,12 +105,14 @@ double Bus::CalcPg(void) {
 
 double Bus::CalcQg(void) {
 	double qgK = 0;
-	for (int i = 0; i < m_branches.size(); i++) {
+	int size = m_branches.size();
+	for (int i = 0; i < size; i++) {
 		Branch* branch = m_branches.at(i);
 		Bus* busM = m_neighbors.at(i);
 		DBranch_t dataBranch = branch->GetBranch();
 
-		double aM, vM;
+		double aM = 0;
+		double vM = 0;
 		busM->SetACalc(aM);
 		busM->SetVCalc(vM);
 		double theta_km = m_aCalc - aM;
@@ -144,11 +160,10 @@ Bus::TapType Bus::GetTap(void) const {
 }
 
 void Bus::Print(void) {
-	std::cout.precision(15);
-	//std::cout.setf(ios::fixed);
+	std::cout.precision(11);
 
-	std::cout << "Bus_" << m_bus.m_nin << "\t" << "V= " << m_vCalc << "\t"
-			<< "ang= " << m_aCalc << std::endl;
+	std::cout << "Bus = " << m_bus.m_nin << "\t" << "V = " << m_vCalc << "\t"
+			<< "ang = " << m_aCalc << std::endl;
 }
 
 void Bus::SetCrt(double crt) {
@@ -160,16 +175,15 @@ double Bus::GetCrt(void) const {
 }
 
 double Bus::CalcDsv(void) {
-	double v;
 	m_dsv = 0;
-	if (v < Bus::MIN_VOLTAGE_ONS) {
-		m_dsv = Bus::MIN_VOLTAGE_ONS - v;
+	if (m_vCalc < MIN_VOLTAGE_ONS) {
+		m_dsv = Bus::MIN_VOLTAGE_ONS - m_vCalc;
 		m_status = MIN_VOLTAGE_VIOLATION;
 		m_isControlled = true;
 	}
 
-	if (v > Bus::MAX_VOLTAGE_ONS) {
-		m_dsv = v - Bus::MAX_VOLTAGE_ONS;
+	if (m_vCalc > Bus::MAX_VOLTAGE_ONS) {
+		m_dsv = m_vCalc - Bus::MAX_VOLTAGE_ONS;
 		m_status = MAX_VOLTAGE_VIOLATION;
 		m_isControlled = true;
 	}
@@ -189,10 +203,75 @@ bool Bus::IsControlled(void) {
 	return m_isControlled;
 }
 
+double Bus::GetACalc() {
+	return m_aCalc;
+}
+
+double Bus::GetVCalc() {
+	return m_vCalc;
+}
+
+double Bus::GetPCalc() {
+	return m_pgCalc;
+}
+double Bus::GetQCalc() {
+	return m_qgCalc;
+}
+
 void Bus::SetACalc(double aCalc) {
 	m_aCalc = aCalc;
 }
 
 void Bus::SetVCalc(double vCalc) {
 	m_vCalc = vCalc;
+}
+
+void Bus::SetPCalc(double pCalc) {
+	m_pgCalc = pCalc;
+}
+
+void Bus::SetQCalc(double qCalc) {
+	m_qgCalc = qCalc;
+}
+
+void Bus::SetOrdG(int ordG) {
+	m_ordG = ordG;
+}
+
+int Bus::GetOrdG(void) const {
+	return m_ordG;
+}
+
+void Bus::AddControl(double value) {
+	m_control.push_back(value);
+}
+
+vec Bus::GetControl(void) const {
+	return m_control;
+}
+
+void Bus::ClearControl(void) {
+	m_control.clear();
+}
+
+double Bus::CalcPG(void) {
+	double pg = this->GetBus().m_pc;
+	std::vector<Bus*> neighbors = this->GetNeighbors();
+	std::vector<Branch*> branches = this->GetBranches();
+	int size = (int) branches.size();
+	for (int j = 0; j < size; j++) {
+		DBranch_t dataBranch = branches.at(j)->GetBranch();
+		Bus* busM = neighbors.at(j);
+
+		double theta_km = this->GetACalc() - busM->GetACalc();
+		//Pg = Pg + (gkm(km)*V(slack)^2 - V(slack)*V(m)*(gkm(km)*cos(akm)+bkm(km)*sin(akm)));
+		pg += (dataBranch.m_g * pow(this->GetVCalc(), 2)
+				- this->GetVCalc() * busM->GetVCalc()
+						* (dataBranch.m_g * cos(theta_km)
+								+ dataBranch.m_b * sin(theta_km)));
+		this->SetPCalc(pg);
+	}
+	return pg;
+
+}
 }

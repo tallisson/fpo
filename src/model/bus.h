@@ -2,6 +2,7 @@
  * Copyright (c) 2016 UFPI (Universidade Federal do Piauí)
  * Author: Thiago Allisson <allissonribeiro02@gmail.com>
  * Author: Enza Rafaela <enzasampaiof@hotmail.com>
+ * Author: Rafael <enzasampaiof@hotmail.com>
  */
 
 #ifndef BUS_H_
@@ -9,8 +10,11 @@
 
 #include "branch.h"
 
+#include <armadillo>
 #include <string>
 #include <vector>
+
+using namespace arma;
 
 namespace model {
 
@@ -52,7 +56,7 @@ typedef bus DBus_t;
 class Bus {
 public:
 	enum Type {
-		SLACK = 3, GENERATION = 2, LOAD = 0, LOSS_CONTROL_REACT = 4
+		SLACK = 3, GENERATION = 2, LOAD = 0, LOSS_CONTROL_REACT = 4, NONE = -1
 	};
 
 	enum TapType {
@@ -73,8 +77,15 @@ public:
 	Bus();
 	virtual ~Bus();
 
+	double GetACalc();
+	double GetVCalc();
+	double GetPCalc();
+	double GetQCalc();
+
 	void SetACalc(double aCalc);
 	void SetVCalc(double vCalc);
+	void SetPCalc(double pCalc);
+	void SetQCalc(double qCalc);
 
 	DBus_t GetBus(void) const;
 	void SetBus(DBus_t bus);
@@ -84,8 +95,8 @@ public:
 
 	void AddBranch(Branch* branch, Bus* neighbor);
 
-	std::vector<Branch* > GetBranches() const;
-	std::vector<Bus* > GetNeighbors() const;
+	std::vector<Branch*> GetBranches() const;
+	std::vector<Bus*> GetNeighbors() const;
 
 	double CalcPg(void);
 	double CalcQg(void);
@@ -99,32 +110,42 @@ public:
 	double GetCrt(void) const;
 
 	double CalcDsv(void);
-
 	double GetDsv(void);
 
 	Bus::Violation GetStatus(void);
 
 	bool IsControlled(void);
+
+	void SetOrdG(int ordG);
+	int GetOrdG(void) const;
+
+	void AddControl(double value);
+	vec GetControl(void) const;
+	void ClearControl(void);
+	double CalcPG(void);
 private:
 	double m_aCalc;
 	double m_vCalc;
 	double m_qgCalc;
 	double m_pgCalc;
 	double m_dsv;
+	double m_ordG;
 
 	TapType m_tap;
 
 	DBus_t m_bus;
-	std::vector<Branch* > m_branches;
-	std::vector<Bus* > m_neighbors;
+	std::vector<Branch*> m_branches;
+	std::vector<Bus*> m_neighbors;
 
 	Type m_type;
-
+	// @ToDo
 	double m_crt;
+	std::vector<double> m_control;
 
 	Violation m_status;
 
 	bool m_isControlled;
+	int m_numControl;
 };
 }
 #endif /* BUS_H_ */

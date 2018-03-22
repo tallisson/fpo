@@ -2,12 +2,25 @@
  * Copyright (c) 2016 UFPI (Universidade Federal do Piauí)
  * Author: Thiago Allisson <allissonribeiro02@gmail.com>
  * Author: Enza Rafaela <enzasampaiof@hotmail.com>
+ * Author: Rafael <enzasampaiof@hotmail.com>
  */
 
 #ifndef BRANCH_H_
 #define BRANCH_H_
 
 namespace model {
+
+enum typeB {
+	/*0 - Transmission line
+	1 - Fixed tap
+	2 - Variable tap for voltage control (TCUL, LTC)
+	3 - Variable tap (turns ratio) for MVAR control
+	4 - Variable phase angle for MW control (phase shifter)*/
+	TRANSMISSION_LINE = 0, FIXED_TAP = 1, VARIABLE_TAP_V_CONTROL = 2,
+	VARIABLE_TAP_MVAR_CONTROL = 3, VARIABLE_PHASE = 4
+};
+typedef typeB DTypeBranch_t;
+
 
 /*
  * Struct to store branches variables
