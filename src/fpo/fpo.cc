@@ -224,25 +224,25 @@ void Fpo::Execute(std::string cdf) {
 
 				double c = m_co;
 				int numB = (int)graph->GetNumBus();
-
 				Data_t bu = m_calc->Busca(lf, graph, m_w, c, m_erro, dLdu);
-				//cout << bu.print() << endl;
+				cout << bu.print() << endl;
 				if (bu.m_conv == 1) {
-					for (int i = 0; i < size; i++) {
+					for (int i = 0; i < numB; i++) {
 						Bus* bus = graph->GetBus(i + 1);
-						if (bus->GetType() != Bus::GENERATION) {
-							bus->SetVCalc(bus->GetVCalc() + c * dLdu(i));
+						if (bus->GetType() != Bus::LOAD && bus->GetType() != Bus::LOSS_CONTROL_REACT) {
+							bus->SetVCalc(bus->GetVCalc() - bu.m_c * dLdu(bus->GetOrdG()));
 						}
 					}
+
 					for (int i = 0; i < size; i++) {
 						Bus* bus = graph->GetBus(i + 1);
-						if (bus->GetType() != Bus::GENERATION
+						if (bus->GetType() != Bus::LOAD && bus->GetType() != Bus::LOSS_CONTROL_REACT
 								&& bus->GetVCalc() < bus->GetBus().m_vmin) {
 							bus->SetVCalc(bus->GetBus().m_vmin);
 							if (m_verbose) {
 								printf("\nV%f < V_min! -> V%f = V_min", bus->GetVCalc(), bus->GetVCalc());
 							}
-						} else if (bus->GetType() != Bus::GENERATION
+						} else if (bus->GetType() != Bus::LOAD && bus->GetType() != Bus::LOSS_CONTROL_REACT
 								&& bus->GetVCalc() > bus->GetBus().m_vmax) {
 							bus->SetVCalc(bus->GetBus().m_vmax);
 							if (m_verbose) {
@@ -287,11 +287,11 @@ void Fpo::Execute(std::string cdf) {
 }
 
 // Relatório de saída:
-
+m_verbose = true;
 if (m_verbose) {
 	if (flag == 1) {
 		printf(
-				"\n\nO método do Gradiente Reduzido convergiu em %d iterações com E = %.0g!",
+				"\n\nO método do Gradiente Reduzido convergiu em %d iterações com E = %.12",
 				k, m_erro);
 	} else {
 		if (flag == 2) {
@@ -309,8 +309,8 @@ if (m_verbose) {
 	if (flag != 3) {
 		printf("\n\nResumo do Relatório de Convergência:");
 		printf("\n\nRelatório de Saída:");
-		Report* rp = new Report();
-		rp->Output(graph);
+		/*Report* rp = new Report();
+		rp->Output(graph);*/
 	}
 }
 }

@@ -279,9 +279,7 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 		if (m_verbose) {
 			printf("\nc = %.4f\n", c);
 		}
-		if(cont++ == 6) {
-			break;
-		}
+		cont++;
 	}
 	printf("C = %.12f, Flag 1 = %d, Flag 2 = %d, Flag 3 = %d\n", c, flag1, flag2, flag3);
 	y.m_c = c;
