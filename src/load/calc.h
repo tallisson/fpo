@@ -11,15 +11,23 @@
 #include "../model/graph.h"
 #include "load-flow.h"
 #include <armadillo>
+#include <string>
+#include <sstream>
 
 using namespace arma;
 using namespace model;
+using namespace std;
 
 namespace load {
 
 struct data {
 	double m_c;
 	int m_conv;
+	string print(void) {
+		ostringstream os;
+		os << "c = " << m_c << ", conv = " << m_conv;
+		return os.str();
+	}
 };
 typedef data Data_t;
 

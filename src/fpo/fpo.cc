@@ -22,7 +22,7 @@ Fpo::Fpo() {
 	m_maxIter = 100;
 	m_w = 85;
 	m_ro = 1;
-	m_co = 0.000124;
+	m_co = 0.00124;
 	m_k = 0;
 	m_verbose = false;
 	lf = new LoadFlow();
@@ -99,9 +99,6 @@ vec Fpo::GetU(void) const {
 	return m_u;
 }
 
-/* Resolução do problema de Despacho Econômico com Representação da Rede
- * pelo método do Gradiente Reduzido (Dommel e Tinney):
- */
 void Fpo::Execute(std::string cdf) {
 	LoadFlow* lf = new LoadFlow;
 	lf->Prepare(cdf);
@@ -113,7 +110,7 @@ void Fpo::Execute(std::string cdf) {
 	}
 
 	m_x = zeros(graph->GetNumPV() + 1);
-	m_verbose = true;
+
 	if (m_verbose) {
 		printf("-----------------------------------------\n");
 		printf("Iteração: \n");
@@ -130,7 +127,6 @@ void Fpo::Execute(std::string cdf) {
 		}
 	}
 
-	// Armazenamento das variáveis de controle a cada iteração: ctrls = zeros(max_iter, npv + 1);
 	int size = (int) graph->GetBuses().size();
 	for (int i = 1; i <= size; i++) {
 		Bus* bus = graph->GetBus(i);
@@ -139,75 +135,50 @@ void Fpo::Execute(std::string cdf) {
 			m_x(bus->GetOrdG()) = bus->GetVCalc();
 		}
 	}
-	m_verbose = false;
 
-	/* Declaração dos vetores para o armazenamento dos valores da função objetivo
-	 modificada e da função perdas a cada iteração: fo_mod = zeros(max_iter, 1);
-	 perdas = zeros(max_iter, 1); Início do processo iterativo: */
 	int flag = 0;
 	int k = 0;
 	while (flag == 0) {
-		// Passo 2 - Calcular as variáveis dependentes x em função de u:
-		// (Resolução do problema de Fluxo de Carga)
 		if (m_verbose) {
 			printf("\n\nVariáveis dependentes: ");
 			m_x.print(cout);
 		}
 
 		int conv = lf->Execute();
-		m_verbose = true;
 		if (m_verbose) {
 			for (int i = 1; i <= size; i++) {
 				Bus* bus = graph->GetBus(i);
 				printf("%.10f\t", bus->GetVCalc());
 			}
+
+			printf("\n");
 		}
-		printf("\n");
-		m_verbose = false;
 
 		if (conv == 1) {
-			/* Atualização da matriz Jacobiana para os novos valores de "V" e "a":
-			 (Este passo é desnecessário quando o ponto de operação já está próximo ao ótimo.)*/
-			//mat jac = lf->ExecuteJ();
 			lf->GetJac()->Zeros(graph);
 			mat jac = lf->GetJac()->CalcJac(graph);
-
-			cout.precision(12);
-			cout.setf(ios::fixed);
-			jac.raw_print(cout, "Jacobiana ");
 			slack->CalcPG();
 			if (m_verbose) {
 				cout << "Derivada da f.o. modificada em relação a: " << m_x
 						<< endl;
 			}
 			vec dfdx = m_calc->GrafX(graph, m_w);
-			/*printf("dfdx: \n");
-			 for(int t = 0; t < dfdx.size(); t++) {
-			 printf("%.10f\n", dfdx(t));
-			 }*/
 			vec lamb = inv(trans(jac)) * -dfdx;
-			/*printf("Lamb: \n");
-			 for(int t = 0; t < lamb.size(); t++) {
-			 printf("%.10f\n", lamb(t));
-			 }*/
 
 			if (m_verbose) {
 				cout << "Cálculo do gradiente reduzido:\n";
 			}
 
 			vec dLdu = m_calc->GradLU(graph, lamb);
-			dLdu.raw_print(cout, "dLdu ");
 
-			// Cálculo da função objetivo no ponto atual (sem a função penalidade -> w=0):
 			double fo = m_calc->Fitness(graph, 0);
-			cout << "Perdas = " << fo << endl;
+			//cout << "Perdas = " << fo << endl;
 			if (m_verbose) {
 				cout << "Perdas = " << fo << endl;
 			}
 			m_foMod(k) = m_calc->Fitness(graph, m_w);
 			m_perdas(k) = fo;
 			//break;
-			// Passo 5 - Teste de convergência:
 			int nElem = (int) dLdu.n_rows;
 			vec gradRed = zeros<vec>(nElem);
 			gradRed = dLdu;
@@ -215,7 +186,7 @@ void Fpo::Execute(std::string cdf) {
 			int size = (int) graph->GetNumBus();
 			for (int i = 0; i < size; i++) {
 				Bus* bus = graph->GetBus(i + 1);
-				if (bus->GetType() != Bus::LOAD) {
+				if (bus->GetType() != Bus::LOAD && bus->GetType() != Bus::LOSS_CONTROL_REACT) {
 					if (bus->GetVCalc() - m_erro <= bus->GetBus().m_vmin) {
 						if (gradRed(bus->GetOrdG()) >= 0) {
 							gradRed(bus->GetOrdG()) = 0;
@@ -231,7 +202,14 @@ void Fpo::Execute(std::string cdf) {
 			if (m_verbose) {
 				cout << "Teste de convergência: " << endl;
 			}
-			if (norm(gradRed) <= m_erro) {
+			ostringstream os;
+			os.precision(13);
+			os.setf(ios::fixed);
+			os << norm(gradRed);
+			double normV = atof(os.str().c_str());
+			cout << "Norm = " << normV << endl;
+
+			if (normV <= m_erro) {
 				conv = 1;
 			} else {
 				conv = 0;
@@ -240,40 +218,35 @@ void Fpo::Execute(std::string cdf) {
 			if (conv == 1) {
 				flag = 1;
 			} else if (k != m_maxIter) {
-				// Passo 6 - Ajustar as variáveis de controle u, fazer
-				// k = k+1 e voltar para o passo 2:
 				k = k + 1;
 				m_w = m_w * m_ro;
-				cout << m_w << endl;
+				//cout << "m_w = " << m_w << endl;
 
 				double c = m_co;
+				int numB = (int)graph->GetNumBus();
+
 				Data_t bu = m_calc->Busca(lf, graph, m_w, c, m_erro, dLdu);
-				break;
+				//cout << bu.print() << endl;
 				if (bu.m_conv == 1) {
-					// Ajuste das magnitudes de tensão das barras de geração:
-					// V = ajuste_controles(npv, V, V_min, V_max, busG, c, dLdu, 1);
 					for (int i = 0; i < size; i++) {
 						Bus* bus = graph->GetBus(i + 1);
 						if (bus->GetType() != Bus::GENERATION) {
 							bus->SetVCalc(bus->GetVCalc() + c * dLdu(i));
 						}
 					}
-					// Correção dos limites violados:
 					for (int i = 0; i < size; i++) {
 						Bus* bus = graph->GetBus(i + 1);
 						if (bus->GetType() != Bus::GENERATION
 								&& bus->GetVCalc() < bus->GetBus().m_vmin) {
 							bus->SetVCalc(bus->GetBus().m_vmin);
 							if (m_verbose) {
-								printf("\nV%d < V_min! -> V%d = V_min",
-										bus->GetVCalc(), bus->GetVCalc());
+								printf("\nV%f < V_min! -> V%f = V_min", bus->GetVCalc(), bus->GetVCalc());
 							}
 						} else if (bus->GetType() != Bus::GENERATION
 								&& bus->GetVCalc() > bus->GetBus().m_vmax) {
 							bus->SetVCalc(bus->GetBus().m_vmax);
 							if (m_verbose) {
-								printf("\nV%d > V_max! -> V%d = V_max",
-										bus->GetVCalc(), bus->GetVCalc());
+								printf("\nV%f > V_max! -> V%f = V_max", bus->GetVCalc(), bus->GetVCalc());
 							}
 						}
 					}
@@ -290,7 +263,6 @@ void Fpo::Execute(std::string cdf) {
 						}
 					}
 
-					//  Armazenamento das variáveis de controle a cada iteração:
 					for (int i = 0; size; i++) {
 						Bus* bus = graph->GetBus(i + 1);
 						if (bus->GetType() != Bus::GENERATION) {
@@ -336,12 +308,6 @@ if (m_verbose) {
 
 	if (flag != 3) {
 		printf("\n\nResumo do Relatório de Convergência:");
-		/*printf("\nIteração   V1        V2        FO Mod    Perdas");
-		 printf("[it]       [p.u.]    [p.u.]    [p.u.]    [p.u.]");
-		 for i=1:k+1,
-		 disp(sprintf('%3d %13.4f %9.4f %9.4f %9.4f', i-1, ctrls(i, 1), ctrls(i, 2), fo_mod(i), perdas(i));
-		 end*/
-
 		printf("\n\nRelatório de Saída:");
 		Report* rp = new Report();
 		rp->Output(graph);

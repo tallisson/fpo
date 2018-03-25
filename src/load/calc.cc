@@ -95,7 +95,6 @@ vec Calc::GradLU(Graph* graph, vec lamb) {
 
 	// Cálculo da Jacobiana das equações do problema de FC em relação às variáveis 'u':
 	JacobianU* jac = new JacobianU();
-	cout << "Oi " << endl;
 	mat jac_u = jac->CalcJac(graph);
 	cout << "JacU \n" << jac_u << endl;
 
@@ -137,12 +136,14 @@ double Calc::Fitness(Graph* graph, double w) {
 	std::set<int> list;
 
 	int numBus = (int) graph->GetNumBus();
+	double v2 = graph->GetBus(2)->GetVCalc();
 	for (int k = 0; k < numBus; k++) {
 		Bus* busK = graph->GetBus(k + 1);
 		list.insert(k + 1);
 		std::vector<Branch*> branches = busK->GetBranches();
 		std::vector<Bus*> neighbors = busK->GetNeighbors();
 		int numBranch = (int) branches.size();
+
 		for (int m = 0; m < numBranch; m++) {
 			Bus* busM = neighbors.at(m);
 			std::set<int>::iterator it = list.find(busM->GetBus().m_nin);
@@ -154,26 +155,21 @@ double Calc::Fitness(Graph* graph, double w) {
 			// TRANSMISSION_LINE = 0
 			if (dataBranch.m_tipo == 0) {
 				double theta_km = busK->GetACalc() - busM->GetACalc();
-				cout << "Theta = " << theta_km << endl;
-				fitness = fitness
-						+ dataBranch.m_g
-								* (pow(busK->GetVCalc(), 2)
-										+ pow(busM->GetVCalc(), 2)
-										- 2 * busK->GetVCalc()
-												* busM->GetVCalc()
-												* cos(theta_km));
+				fitness = fitness + dataBranch.m_g * ( pow(busK->GetVCalc(), 2)
+						  + pow(busM->GetVCalc(), 2) - 2 * busK->GetVCalc()* busM->GetVCalc() * cos(theta_km) );
+				if(v2 > 1.10) {
+					cout << "Fitness " << fitness << ", " << busK->GetACalc() << endl;
+				}
 			}
 		}
 	}
-	//cout << "Fitness: " << fitness << endl;
 	for (int i = 0; i < numBus; i++) {
 		Bus* bus = graph->GetBus(i + 1);
 		DBus_t dataBus = bus->GetBus();
 		if (bus->GetType() == Bus::LOAD && bus->GetVCalc() < dataBus.m_vmin) {
-			fitness += w * pow((bus->GetVCalc() - dataBus.m_vmin), 2);
-		} else if (bus->GetType() == Bus::LOAD
-				&& bus->GetVCalc() > dataBus.m_vmax) {
-			fitness += w * pow((dataBus.m_vmax - bus->GetVCalc()), 2);
+			fitness = fitness + w * pow((bus->GetVCalc() - dataBus.m_vmin), 2);
+		} else if (bus->GetType() == Bus::LOAD && bus->GetVCalc() > dataBus.m_vmax) {
+			fitness = fitness + w * pow((bus->GetVCalc() - dataBus.m_vmax), 2);
 		}
 	}
 	list.clear();
@@ -193,30 +189,36 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 
 	// Cálculo da função objetivo modificada no ponto atual:
 	double fo1 = this->Fitness(graph, w);
-	cout << "f1 " << fo1 << endl;
+
 	if (m_verbose) {
 		cout << "Busca Unidimensional: " << endl;
 		cout << "fo1        c        fo2" << endl;
 	}
+	vec u_o = zeros<vec>(dLdu.n_elem);
+	int numBus = (int) graph->GetNumBus();
+	for (int k = 0; k < numBus; k++) {
+		Bus* bus = graph->GetBus(k + 1);
+		if (bus->GetType() != Bus::LOAD) {
+			u_o(bus->GetOrdG()) = bus->GetVCalc();
+		}
+	}
+	//printf("c = %.12f, w = %.12f e erro = %.12f\n", c, w, erro);
+	cout << "Busca = " << endl;
 
 	// Determinação do valor do parâmetro "c":
 	int flag1 = 0;
 	int flag2 = 0;
 	int flag3 = 0;
 	//int cont = 0;
-	cout << "C " << c << endl;
 
 	while (flag1 == 0 || flag2 == 0) {
 		// Ajuste das magnitudes de tensão das barras de geração:
 		// (PV + slack)
-		int numBus = (int) graph->GetNumBus();
 		for (int k = 0; k < numBus; k++) {
 			Bus* bus = graph->GetBus(k + 1);
 			if (bus->GetType() != Bus::LOAD) {
-				bus->SetVCalc(bus->GetVCalc() - c * dLdu(bus->GetOrdG()));
-				cout << "V bus = " << bus->GetVCalc() << endl;
-			} else
-				cout << "V bus = " << bus->GetVCalc() << endl;
+				bus->SetVCalc(u_o(bus->GetOrdG()) - c * dLdu(bus->GetOrdG()));
+			}
 		}
 
 		// Correção dos limites violados:
@@ -229,13 +231,15 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 					bus->SetVCalc(bus->GetBus().m_vmax);
 				}
 			}
+			if(cont == 5) {
+				printf("%.12f\n", bus->GetVCalc());
+			}
 		}
 
 		// Cálculo do Fluxo de Carga ("atualização" das variáveis dependentes 'x'):
+		lf->SetInit(true);
 		int conv = lf->Execute();
-
 		if (conv == 1) {
-			cout << "Conv " << endl;
 			double pgSlack = graph->GetSlack()->CalcPG();
 			cout << "Slack Pg = " << pgSlack << endl;
 
@@ -243,7 +247,8 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 			double fo2 = Fitness(graph, w);
 			cout << "Fo1 = " << fo1 << endl;
 			cout << "Fo2 = " << fo2 << endl;
-
+			cout << "Cont = " << cont << endl;
+			m_verbose = true;
 			if (m_verbose) {
 				if (fo2 < fo1) {
 					printf("\n%.6f   %6.4f   %.6f  <-  ok\n", fo1, c, fo2);
@@ -251,6 +256,7 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 					printf("\n%.6f   %6.4f   %.6f  <-   x\n", fo1, c, fo2);
 				}
 			}
+			m_verbose = false;
 
 			// Teste do passo descendente:
 			if ((c > min_c) || (c < max_c)) {
@@ -273,12 +279,13 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 		if (m_verbose) {
 			printf("\nc = %.4f\n", c);
 		}
-		if(cont++ == 9) {
+		if(cont++ == 6) {
 			break;
 		}
 	}
 	printf("C = %.12f, Flag 1 = %d, Flag 2 = %d, Flag 3 = %d\n", c, flag1, flag2, flag3);
 	y.m_c = c;
+	//return y;
 	if (flag3 != 1 || flag1 == 1) {
 		y.m_conv = 1;
 	} else {

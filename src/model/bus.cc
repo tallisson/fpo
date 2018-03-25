@@ -67,34 +67,19 @@ double Bus::CalcPg(void) {
 		Bus* busM = m_neighbors.at(i);
 		DBranch_t dataBranch = branch->GetBranch();
 
-		double aM = 0;
-		double vM = 0;
-		busM->SetACalc(aM);
-		busM->SetVCalc(vM);
+		double aM = busM->GetACalc();
+		double vM = busM->GetVCalc();
 		double theta_km = m_aCalc - aM;
 		double vK = m_vCalc;
 
 		if (m_bus.m_nin == dataBranch.m_nf) {
-			pgK +=
-					(dataBranch.m_g * (1 / pow(dataBranch.m_tap, 2))
-							* pow(vK, 2)
-							- (1 / dataBranch.m_tap) * vK * vM
-									* (dataBranch.m_g
-											* cos(theta_km - dataBranch.m_def)
-											+ dataBranch.m_b
-													* sin(
-															theta_km
-																	- dataBranch.m_def)));
+			pgK += (dataBranch.m_g * (1 / pow(dataBranch.m_tap, 2)) * pow(vK, 2)
+					- (1 / dataBranch.m_tap) * vK * vM * (dataBranch.m_g * cos(theta_km - dataBranch.m_def)
+					+ dataBranch.m_b * sin(theta_km - dataBranch.m_def)));
 		} else {
-			pgK +=
-					(dataBranch.m_g * pow(vK, 2)
-							- (1 / dataBranch.m_tap) * vK * vM
-									* (dataBranch.m_g
-											* cos(theta_km + dataBranch.m_def)
-											+ dataBranch.m_b
-													* sin(
-															theta_km
-																	+ dataBranch.m_def)));
+			pgK += (dataBranch.m_g * pow(vK, 2) - (1 / dataBranch.m_tap) * vK * vM
+				   * (dataBranch.m_g * cos(theta_km + dataBranch.m_def) + dataBranch.m_b
+				   * sin(theta_km + dataBranch.m_def)));
 		}
 	}
 	pgK += -GetBus().m_gsh * pow(m_vCalc, 2) + GetBus().m_pc;
@@ -111,34 +96,21 @@ double Bus::CalcQg(void) {
 		Bus* busM = m_neighbors.at(i);
 		DBranch_t dataBranch = branch->GetBranch();
 
-		double aM = 0;
-		double vM = 0;
-		busM->SetACalc(aM);
-		busM->SetVCalc(vM);
+		double aM = busM->GetACalc();
+		double vM = busM->GetVCalc();
+		/*busM->SetACalc(aM);
+		busM->SetVCalc(vM);*/
 		double theta_km = m_aCalc - aM;
 		double vK = m_vCalc;
 
 		if (m_bus.m_nin == dataBranch.m_ni) {
-			qgK +=
-					(-(dataBranch.m_b * (1 / pow(dataBranch.m_tap, 2))
-							+ dataBranch.m_bsh) * pow(vK, 2)
-							+ (1 / dataBranch.m_tap) * vK * vM
-									* (dataBranch.m_b
-											* cos(theta_km - dataBranch.m_def)
-											- dataBranch.m_g
-													* sin(
-															theta_km
-																	- dataBranch.m_def)));
+			qgK += (-(dataBranch.m_b * (1 / pow(dataBranch.m_tap, 2)) + dataBranch.m_bsh) * pow(vK, 2)
+				   + (1 / dataBranch.m_tap) * vK * vM * (dataBranch.m_b * cos(theta_km - dataBranch.m_def)
+				   - dataBranch.m_g * sin(theta_km - dataBranch.m_def)));
 		} else {
-			qgK +=
-					(-dataBranch.m_b * pow(vK, 2)
-							+ (1 / dataBranch.m_tap) * vK * vM
-									* (dataBranch.m_b
-											* cos(theta_km + dataBranch.m_def)
-											- dataBranch.m_g
-													* sin(
-															theta_km
-																	+ dataBranch.m_def)));
+			qgK += (-dataBranch.m_b * pow(vK, 2) + (1 / dataBranch.m_tap) * vK * vM
+				   * (dataBranch.m_b * cos(theta_km + dataBranch.m_def) - dataBranch.m_g
+				   * sin(theta_km + dataBranch.m_def)));
 		}
 	}
 	qgK += -GetBus().m_bsh * pow(m_vCalc, 2) + GetBus().m_qc;

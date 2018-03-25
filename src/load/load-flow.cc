@@ -20,7 +20,7 @@ using namespace arma;
 namespace load {
 
 LoadFlow::LoadFlow(void) {
-	m_precision = 0.00001;
+	m_error = 0.00001;
 	m_iter = 0;
 	m_maxIter = 10;
 	m_qControl = new QControl();
@@ -31,6 +31,8 @@ LoadFlow::LoadFlow(void) {
 	m_hasQControl = false;
 	m_totalL = 0.0;
 	m_vControl = NULL;
+	m_hasInit = false;
+	m_conv = 0;
 }
 
 LoadFlow::~LoadFlow(void) {
@@ -65,10 +67,7 @@ void LoadFlow::InitX0(void) {
 	for (int i = 0; i < m_graph->GetNumBus(); i++) {
 		Bus* bus = m_graph->GetBus(i + 1);
 		if (bus->GetType() != Bus::SLACK) {
-			/*double angSlack =
-					m_graph->GetBus(m_graph->GetPosSlack())->GetBus().m_ang;*/
-			double angSlack = 0;
-			bus->SetACalc(angSlack);
+			bus->SetACalc(0.0);
 		}
 
 		if (bus->GetType() == Bus::LOAD) {
@@ -83,20 +82,20 @@ void LoadFlow::Prepare(std::string cdf) {
 	m_sts = utils->Read(cdf);
 
 	m_graph->SetPosSlack(m_sts.m_posSlack);
-	if(m_verbose) {
+	if (m_verbose) {
 		cout << "Dados das Barras " << endl;
 	}
-	int size = (int)m_sts.buses.size();
+	int size = (int) m_sts.buses.size();
 	for (int i = 0; i < size; i++) {
-		DBus_t busData = m_sts.buses.at(i);
 		Bus* bus = new Bus();
+		DBus_t busData = m_sts.buses.at(i);
 		bus->SetBus(busData);
 		m_graph->AddBus(bus);
-		if(m_verbose) {
+		if (m_verbose) {
 			bus->Print();
 		}
 	}
-	if(m_verbose) {
+	if (m_verbose) {
 		cout << "Dados dos Branches " << size << std::endl;
 	}
 	size = m_sts.branches.size();
@@ -119,7 +118,7 @@ void LoadFlow::Prepare(std::string cdf) {
 			busNi->SetTap(Bus::TAP);
 			busNf->SetTap(Bus::IMP);
 		}
-		if(m_verbose) {
+		if (m_verbose) {
 			branch->Print();
 		}
 	}
@@ -150,66 +149,42 @@ int LoadFlow::Execute() {
 	 * Calcular o vetor dos mismatches, a matriz Jacobiana e resolver
 	 * o sistema de equações lineares:
 	 */
-	m_conv = 1;
+	m_conv = 0;
 	InitX0();
 	InitJ();
-
 	m_b = m_mismatches->CalcMismatches(m_graph);
-	std::cout.precision(11);
-	std::cout.setf(ios::fixed);
-	if(m_verbose) {
-		m_b.raw_print(cout, "\n160-lf.cc Erro: ");
-		cout << "\n" << endl;
-	}
-	bool execute = false;
-	int nextIter, nextCrt;
-	nextCrt = 0;
-	if(m_verbose) {
-		std::cout << "Estado inicial" << std::endl;
-
-		for (int i = 1; i <= m_graph->GetNumBus(); i++) {
-			Bus* bus = m_graph->GetBus(i);
+	if(m_hasInit) {
+		/*int numB = (int) m_graph->GetNumBus();
+		for (int i = 0; i < numB; i++) {
+			Bus* bus = m_graph->GetBus(i + 1);
 			bus->Print();
-		}
-		m_b.raw_print(cout, "Erros:");
-		std::cout << std::endl;
-		std::cout << "++++++++++++++++++++++++++++++++++++++" << std::endl;
+		}*/
+		//cout << "Error: \n" << m_b << endl;
 	}
-	do //while (execute)
-	{
+	mat m;
+
+	bool execute = false;
+	uint32_t nextIter, nextCrt;
+	nextCrt = 0;
+	do {
 		nextIter = 0;
 		m_iter = 0;
 		while (nextIter == 0) {
-			mat m = m_jac->CalcJac(m_graph);
+			m = m_jac->CalcJac(m_graph);
 			vec dx = m_jac->SolveSys(m_b);
-			if(m_verbose) {
-				m.raw_print(cout, "Jacobiana: ");
-				std::cout << std::endl;
-				std::cout << "++++++++++++++++++++++++++++++++++++++" << std::endl;
-				m_b.raw_print(cout, "Erros:");
-				std::cout << std::endl;
-				std::cout << "++++++++++++++++++++++++++++++++++++++" << std::endl;
-				dx.raw_print(cout, "X:");
-				std::cout << std::endl;
-				std::cout << "++++++++++++++++++++++++++++++++++++++" << std::endl;
-			}
-
-			// Atualizar 'a' e 'V':
-			for (int i = 0; i < m_graph->GetNumBus(); i++) {
+			int numB = (int) m_graph->GetNumBus();
+			for (int i = 0; i < numB; i++) {
 				Bus* bus = m_graph->GetBus(i + 1);
 				if (bus->GetType() != Bus::SLACK) {
 					double angD = bus->GetACalc();
-
 					angD += dx(bus->GetBus().m_ord);
 					bus->SetACalc(angD);
 				}
 
-				if (bus->GetType() != Bus::SLACK
-						&& bus->GetType() != Bus::GENERATION) {
+				if (bus->GetType() != Bus::SLACK && bus->GetType() != Bus::GENERATION) {
 					double vD = bus->GetVCalc();
 
-					int ind = m_graph->GetNumBus() - 1
-							+ bus->GetBus().m_ordPQ;
+					uint32_t ind = m_graph->GetNumBus() - 1 + bus->GetBus().m_ordPQ;
 					vD += dx(ind);
 					bus->SetVCalc(vD);
 				}
@@ -221,10 +196,10 @@ int LoadFlow::Execute() {
 					InitJ();
 				}
 			}
-
 			m_iter++;
 
 			// Qlim
+			std::cout << "Iter " << m_iter << std::endl;
 			if (m_hasQControl == true) {
 				crt = m_qControl->DoControl(m_graph);
 				if (crt == true) {
@@ -237,43 +212,36 @@ int LoadFlow::Execute() {
 			 * 'a' e 'V':
 			 */
 			m_b = m_mismatches->CalcMismatches(m_graph);
-			//m_b.raw_print(cout, "(238 lf.cc) Erro: ");
-
-			if(m_verbose) {
-				std::cout << "Erros: \n" << m_b;
-				std::cout << "+++++++++++++++++++++++++++++++++++++++++\n";
-
-				for (int i = 0; i < m_graph->GetNumBus(); i++) {
-					Bus* bus = m_graph->GetBus(i + 1);
-					bus->Print();
-				}
-			}
 			// Teste de convergência:
 			double maxB = max(abs(m_b));
-			if (maxB <= m_precision) {
+
+			if (maxB <= m_error) {
 				nextIter = 1;
 				m_conv = 1;
+				//cout << m << endl;
 			} else {
 				m_jac->Zeros();
-				int nPQ = m_graph->GetNumPQ();
-				int nPV = m_graph->GetNumPV();
-				int numB = m_graph->GetNumBus();
+				uint32_t nPQ = m_graph->GetNumPQ();
+				uint32_t nPV = m_graph->GetNumPV();
+				uint32_t numB = m_graph->GetNumBus();
 				m_jac->SetJ1((nPQ + nPV), (nPQ + nPV));
 				m_jac->SetJ2((nPQ + nPV), numB);
 				m_jac->SetJ3(numB, (nPQ + nPV));
 				m_jac->SetJ4(numB, numB);
 				nextIter = 0;
-
+				m_conv = 0;
 				// Critério de saída do laço:
 				if (m_iter == m_maxIter) {
 					nextIter = 2;
 				}
-				m_conv = 0;
 			}
 			if (nextIter != 0) {
-				CalcLosses();
+				/*CalcLosses();
+				 m_report->StoreData(m_graph, m_sts.m_baseMVA);
+				 m_report->StoreL(m_totalL);*/
 			}
 		}
+
 		if (m_vControl != NULL) {
 			execute = false;
 			if (nextCrt < 2) {
@@ -284,20 +252,13 @@ int LoadFlow::Execute() {
 			nextCrt++;
 		}
 	} while (execute);
-	if (nextIter == 1 && m_verbose) {
+	if (nextIter == 1) {
 		std::cout << "O método de Newton-Raphson convergiu em " << m_iter
 				<< " iterações" << std::endl;
-	} else if(m_verbose){
+	} else {
 		std::cout
 				<< "O número máximo de iterações foi atingido e o método de Newton-Raphson não convergiu..."
 				<< std::endl;
-	}
-	m_verbose = true;
-	if(m_verbose) {
-		for (int i = 0; i < m_graph->GetNumBus(); i++) {
-			Bus* bus = m_graph->GetBus(i + 1);
-			bus->Print();
-		}
 	}
 
 	return m_conv;
@@ -306,7 +267,7 @@ int LoadFlow::Execute() {
 void LoadFlow::CalcLosses(void) {
 	std::vector<double> p_km, p_mk, q_km, q_mk, pL, losses;
 	m_totalL = 0;
-	std::vector<Branch* > branches = m_graph->GetBranches();
+	std::vector<Branch*> branches = m_graph->GetBranches();
 	for (int i = 0; i < m_graph->GetNumBranch(); i++) {
 		Branch* branch = branches.at(i);
 		Bus* busK = m_graph->GetBus(branch->GetBranch().m_ni);
@@ -332,13 +293,13 @@ void LoadFlow::CalcLosses(void) {
 	if (m_verbose) {
 		//@ToDo
 	}
-	if(m_verbose) {
+	if (m_verbose) {
 		std::cout << "Perda Total: " << m_totalL << std::endl;
 	}
 }
 
-void LoadFlow::SetPrecision(double precision) {
-	m_precision = precision;
+void LoadFlow::SetError(double error) {
+	m_error = error;
 }
 
 void LoadFlow::SetDir(std::string dir) {
@@ -371,6 +332,10 @@ int LoadFlow::GetConv(void) const {
 
 Jacobian* LoadFlow::GetJac(void) const {
 	return m_jac;
+}
+
+void LoadFlow::SetInit(bool init) {
+	m_hasInit = init;
 }
 
 }

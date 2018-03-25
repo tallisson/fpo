@@ -47,7 +47,7 @@ Sts_t Utils::GetSts(void) const {
 Sts_t Utils::Read(string filename) {
 	ifstream file(filename.c_str());
 	if (!file.is_open()) {
-		cerr << "Arquivo não encontrado (utils.cc -> linha 50)" << endl;
+		cout << "Arquivo não encontrado (utils.cc -> linha 50)" << endl;
 		return m_s;
 	}
 
@@ -65,7 +65,7 @@ Sts_t Utils::Read(string filename) {
 	m_s.m_baseMVA = atof(titleCdf.substr(31, 5).c_str());
 
 	if (m_s.m_baseMVA == 0) {
-		cerr << "Base MVA is equal to zero" << endl;
+		cout << "Base MVA is equal to zero" << endl;
 	}
 	std::cout << "Search string 'BUS DATA FOLLOWS'. (utils.cc -> linha 69)" << std::endl;
 	// Search string 'BUS DATA FOLLOWS'.
@@ -110,7 +110,7 @@ Sts_t Utils::Read(string filename) {
 
 		if (bus.m_tipo < 0 || bus.m_tipo > 3) {
 			bus.m_tipo = 0;
-			cerr << "Tipo da barra definido fora dos padrões CDF, considerou-se que esta barra seja do tipo (PQ) (utils.cc -> linha 112)" <<
+			cout << "Tipo da barra definido fora dos padrões CDF, considerou-se que esta barra seja do tipo (PQ) (utils.cc -> linha 112)" <<
 					endl;
 		}
 
@@ -118,11 +118,11 @@ Sts_t Utils::Read(string filename) {
 		bus.m_v = atof(line.substr(27, 5).c_str());
 		if (bus.m_v < VMIN_MIN) {
 			bus.m_v = 1;
-			cerr << "Magnitude de tensão definida abaixo do valor mínimo para divergência automática do caso. (utils.cc -> linha 121)"
+			cout << "Magnitude de tensão definida abaixo do valor mínimo para divergência automática do caso. (utils.cc -> linha 121)"
 					<< endl;
 		} else if (bus.m_v > VMAX_MAX) {
 			bus.m_v = 1;
-			cerr <<
+			cout <<
 					"Magnitude de tensão definida acima do valor máximo para divergência automática do caso. (utils.cc -> linha 125)" << endl;
 		}
 
@@ -144,11 +144,11 @@ Sts_t Utils::Read(string filename) {
 		if (bus.m_tipo == 0) {
 			if (bus.m_vg_o < VMIN_MIN) {
 				bus.m_vg_o = 1;
-				cerr <<
+				cout <<
 						"Magnitude da tensão desejada definida abaixo do valor mínimo para divergência automática do caso. (utils.cc -> linha 147)" << endl;
 			} else if (bus.m_vg_o > VMAX_MAX) {
 				bus.m_vg_o = 1;
-				cerr <<
+				cout <<
 						"Magnitude da tensão desejada definida acima do valor máximo para divergência automática do caso. (utils.cc -> linha 151)" << endl;
 			}
 		}
@@ -164,9 +164,11 @@ Sts_t Utils::Read(string filename) {
 				bus.m_qgmin = -999.9999;
 			}
 			// Magnitude de tensão máxima:
-			bus.m_vmax = VMAX;
+			//bus.m_vmax = VMAX;
 			// Magnitude de tensão mínima:
-			bus.m_vmin = VMIN;
+			//bus.m_vmin = VMIN;
+			bus.m_vmax = atof(line.substr(90, 7).c_str());
+			bus.m_vmin = atof(line.substr(98, 7).c_str());
 		} else if (bus.m_tipo == 1) {
 			// Geração reativa máxima:
 			bus.m_qgmax = 0.0;
@@ -177,25 +179,25 @@ Sts_t Utils::Read(string filename) {
 			bus.m_vmax = atof(line.substr(90, 7).c_str());
 			if (bus.m_vmax == 0) {
 				bus.m_vmax = VMAX;
-				cerr << "Limite máximo da magnitude de tensão não definido." << endl;
+				cout << "Limite máximo da magnitude de tensão não definido." << endl;
 			} else if (bus.m_vmax > VMAX) {
 				bus.m_vmax = VMAX;
-				cerr << "Limite máximo da magnitude de tensão definido acima do valor máximo padrão" << endl;
+				cout << "Limite máximo da magnitude de tensão definido acima do valor máximo padrão" << endl;
 			} else if (bus.m_vmax < VMIN) {
 				bus.m_vmax = VMAX;
-				cerr << "Limite máximo da magnitude de tensão definido abaixo do valor mínimo padrão" << endl;
+				cout << "Limite máximo da magnitude de tensão definido abaixo do valor mínimo padrão" << endl;
 			}
 			// Magnitude de tensão mínima:
 			bus.m_vmin = atof(line.substr(98, 7).c_str());
 			if (bus.m_vmin == 0) {
 				bus.m_vmin = VMIN;
-				cerr << "Limite mínimo da magnitude de tensão não definido." << endl;
+				cout << "Limite mínimo da magnitude de tensão não definido." << endl;
 			} else if (bus.m_vmin < VMIN) {
 				bus.m_vmin = VMIN;
-				cerr << "Limite mínimo da magnitude de tensão definido abaixo do valor mínimo padrão." << endl;
+				cout << "Limite mínimo da magnitude de tensão definido abaixo do valor mínimo padrão." << endl;
 			} else if (bus.m_vmin > VMAX) {
 				bus.m_vmin = VMIN;
-				cerr << "Limite mínimo da magnitude de tensão definido acima do valor máximo padrão." << endl;
+				cout << "Limite mínimo da magnitude de tensão definido acima do valor máximo padrão." << endl;
 			}
 		} else {
 			// Geração reativa máxima:
@@ -203,10 +205,8 @@ Sts_t Utils::Read(string filename) {
 			// Geração reativa mínima:
 			bus.m_qgmin = 0.0;
 
-			// Magnitude de tensão máxima:
-			bus.m_vmax = VMAX;
-			// Magnitude de tensão mínima:
-			bus.m_vmin = VMIN;
+			bus.m_vmax = atof(line.substr(90, 7).c_str());
+			bus.m_vmin = atof(line.substr(98, 7).c_str());
 		}
 
 		// Condutância do shunt de barra:
@@ -259,7 +259,7 @@ Sts_t Utils::Read(string filename) {
 		bus.m_tipo = 3;
 		m_s.m_posSlack = 1;
 		m_s.buses.at(0) = bus;
-		cerr <<
+		cout <<
 				"Não foi encontrada nenhuma barra do tipo SLACK. A primeira barra do tipo PV dos dados de barra foi transformada em barra SLACK" << endl;
 	}
 
@@ -297,7 +297,7 @@ Sts_t Utils::Read(string filename) {
 		branch.m_tipo = atoi(line.substr(18, 1).c_str());
 		if (branch.m_tipo < 0 || branch.m_tipo > 4) {
 			branch.m_tipo = 0;
-			cerr <<
+			cout <<
 					"Tipo do ramo definido fora dos padrões CDF; considerou-se que este ramo seja do tipo '0'." << endl;
 		}
 		// Resistência série:
@@ -306,7 +306,7 @@ Sts_t Utils::Read(string filename) {
 		branch.m_x = atof(line.substr(29, 9).c_str());
 
 		if(branch.m_x == 0) {
-			cerr << "O ramo possui reatância igual a zero." << endl;
+			cout << "O ramo possui reatância igual a zero." << endl;
 		}
 		// Susceptância shunt de linha:
 		branch.m_bsh = atof(line.substr(40, 10).c_str()) / 2; // De acordo com o texto do artigo.
@@ -320,7 +320,7 @@ Sts_t Utils::Read(string filename) {
 		branch.m_t_ctrl = atof(line.substr(68, 4).c_str());
 		if (branch.m_t_ctrl == 0 && branch.m_tipo == 2) {
 			branch.m_t_ctrl = branch.m_nf;
-			cerr << "Barra controlada pelo trafo do ramo não definida." << endl;
+			cout << "Barra controlada pelo trafo do ramo não definida." << endl;
 		}
 
 		// Localização da barra controlada pelo transformador:
@@ -334,7 +334,7 @@ Sts_t Utils::Read(string filename) {
 			branch.m_tap = 1.0;
 		} else if (branch.m_tap == 0) {
 			branch.m_tap = 1.0;
-			cerr << "Tap do trafo do ramo não definido." << endl;
+			cout << "Tap do trafo do ramo não definido." << endl;
 		}
 		// Ângulo de defasamento:
 		branch.m_def = atof(line.substr(83, 6).c_str()) * (M_PI / 180);
@@ -343,27 +343,27 @@ Sts_t Utils::Read(string filename) {
 			branch.m_tapmin = atof(line.substr(90, 6).c_str());
 			if (branch.m_tapmin == 0) {
 				branch.m_tapmin = TAPMIN;
-				cerr << "Limite mínimo do tap do trafo não definido." << endl;
+				cout << "Limite mínimo do tap do trafo não definido." << endl;
 			} else if (branch.m_tapmin < TAPMIN_MIN || branch.m_tapmin > 1) {
 				branch.m_tapmin = TAPMIN_MIN;
-				cerr <<
+				cout <<
 						"Limite mínimo do tap do trafo do ramo definido fora dos valores operacionais." << endl;
 			}
 			// Tap máximo:
 			branch.m_tapmax = atof(line.substr(97, 6).c_str());
 			if (branch.m_tapmax == 0) {
 				branch.m_tapmax = TAPMAX;
-				cerr << "Limite máximo do tap do trafo não definido." << endl;
+				cout << "Limite máximo do tap do trafo não definido." << endl;
 			} else if (branch.m_tapmax > TAPMAX_MAX || branch.m_tapmax < 1) {
 				branch.m_tapmax = TAPMAX;
-				cerr <<
+				cout <<
 						"Limite máximo do tap do trafo definido fora dos valores operacionais." << endl;
 			}
 			// Tamanho do passo entre posições intermediárias do tap:
 			branch.m_passo = atof(line.substr(104, 6).c_str());
 			if (branch.m_passo == 0) {
 				branch.m_passo = STEP;
-				cerr <<
+				cout <<
 						"Tamanho do passo entre posições intermediárias do tap do trafo não definido." << endl;
 			}
 			// Limite mínimo da grandeza (magnitude de tensão, fluxo de potência reativa ou fluxo de potência ativa) controlada:

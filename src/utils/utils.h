@@ -61,8 +61,8 @@ public:
   static const double VMIN_MIN = 0.65;
   static const double VMAX_MAX = 1.35;
 
-  static const double VMIN = 0.90;
-  static const double VMAX = 1.10;
+  static const double VMIN = 0.95;
+  static const double VMAX = 1.20;
 
   Sts_t GetSts(void) const;
 

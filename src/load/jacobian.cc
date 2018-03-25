@@ -476,4 +476,3 @@ mat Jacobian::GetJqv(void) {
 }
 
 }
-

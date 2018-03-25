@@ -8,9 +8,8 @@ using namespace fpo;
 
 int main(int argc, char **argv) {
 	std::cout << "Rodando o Fluxo" << std::endl;
-	LoadFlow* f = new LoadFlow;
-	f->Prepare("/home/pc-thiago/eclipse-workspace/LoadFlow/src/data/3bus.txt");
-	f->Execute();
+	Fpo* f = new Fpo;
+	f->Execute("/home/pc-thiago/eclipse-workspace/LoadFlow/src/data/3bus.txt");
 	delete f;
 	/*cout << "Armadillo version: " << arma_version::as_string() << endl;
 

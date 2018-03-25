@@ -37,7 +37,7 @@ private:
 
 	Sts_t m_sts;
 
-	double m_precision;
+	double m_error;
 	double m_totalL;
 	uint32_t m_iter;
 	uint32_t m_maxIter;
@@ -59,6 +59,8 @@ private:
 	std::ostringstream os;
 
 	int m_conv;
+
+	bool m_hasInit;
 public:
 	LoadFlow(void);
 	virtual ~LoadFlow(void);
@@ -74,7 +76,7 @@ public:
 
 	int Execute();
 
-	void SetPrecision(double precision);
+	void SetError(double error);
 
 	void SetDir(std::string dir);
 
@@ -92,6 +94,8 @@ public:
 	int GetConv(void) const;
 
 	Jacobian* GetJac(void) const;
+
+	void SetInit(bool init);
 };
 
 }
