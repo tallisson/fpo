@@ -29,6 +29,8 @@ Bus::Bus() {
 	m_aCalc = 0;
 	m_ordG = -1;
 	m_numControl = 0;
+	m_vPreBusca = 0;
+	m_aPreBusca = 0;
 }
 
 Bus::~Bus() {
@@ -246,4 +248,21 @@ double Bus::CalcPG(void) {
 	return pg;
 
 }
+
+void Bus::SetVPreBusca(double v) {
+	m_vPreBusca = v;
+}
+
+double Bus::GetVPreBusca(void) const {
+	return m_vPreBusca;
+}
+
+void Bus::SetAPreBusca(double a) {
+	m_aPreBusca = a;
+}
+
+double Bus::GetAPreBusca(void) const {
+	return m_aPreBusca;
+}
+
 }

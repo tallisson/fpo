@@ -158,7 +158,7 @@ double Calc::Fitness(Graph* graph, double w) {
 				fitness = fitness + dataBranch.m_g * ( pow(busK->GetVCalc(), 2)
 						  + pow(busM->GetVCalc(), 2) - 2 * busK->GetVCalc()* busM->GetVCalc() * cos(theta_km) );
 				if(v2 > 1.10) {
-					cout << "Fitness " << fitness << ", " << busK->GetACalc() << endl;
+					cout << "Fitness " << fitness << " AND " << busK->GetACalc() << endl;
 				}
 			}
 		}
@@ -194,8 +194,16 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 		cout << "Busca Unidimensional: " << endl;
 		cout << "fo1        c        fo2" << endl;
 	}
-	vec u_o = zeros<vec>(dLdu.n_elem);
+
+	// Pré-busca
 	int numBus = (int) graph->GetNumBus();
+	for(int k = 0; k < numBus; k++) {
+		Bus* bus = graph->GetBus(k + 1);
+		bus->SetVPreBusca(bus->GetVCalc());
+		bus->SetAPreBusca(bus->GetACalc());
+	}
+
+	vec u_o = zeros<vec>(dLdu.n_elem);
 	for (int k = 0; k < numBus; k++) {
 		Bus* bus = graph->GetBus(k + 1);
 		if (bus->GetType() != Bus::LOAD) {
@@ -217,7 +225,7 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 		for (int k = 0; k < numBus; k++) {
 			Bus* bus = graph->GetBus(k + 1);
 			if (bus->GetType() != Bus::LOAD) {
-				bus->SetVCalc(u_o(bus->GetOrdG()) - c * dLdu(bus->GetOrdG()));
+				bus->SetVCalc(bus->GetVPreBusca() - c * dLdu(bus->GetOrdG()));
 			}
 		}
 

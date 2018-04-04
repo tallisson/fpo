@@ -20,7 +20,7 @@ using namespace arma;
 namespace load {
 
 LoadFlow::LoadFlow(void) {
-	m_error = 0.00001;
+	m_error = 1e-3;
 	m_iter = 0;
 	m_maxIter = 10;
 	m_qControl = new QControl();

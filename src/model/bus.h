@@ -112,6 +112,11 @@ public:
 	double CalcDsv(void);
 	double GetDsv(void);
 
+	void SetVPreBusca(double v);
+	double GetVPreBusca(void) const;
+	void SetAPreBusca(double a);
+	double GetAPreBusca(void) const;
+
 	Bus::Violation GetStatus(void);
 
 	bool IsControlled(void);
@@ -130,6 +135,8 @@ private:
 	double m_pgCalc;
 	double m_dsv;
 	double m_ordG;
+	double m_vPreBusca;
+	double m_aPreBusca;
 
 	TapType m_tap;
 
