@@ -86,10 +86,6 @@ vec Mismatch::CalcMismatches(Graph* graph) {
 
 	CalcPkB(graph);
 	CalcQkB(graph);
-	cout << "Mis: " << endl;
-	for(int i = 0; i < m_mis.size(); i++) {
-		printf("%.12f\n", m_mis(i));
-	}
 
 	return GetMis();
 }

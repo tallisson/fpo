@@ -1,16 +1,31 @@
 #include "iostream"
 #include "armadillo"
 #include "fpo/fpo.h"
+#include "pso/pso.h"
+#include "pso/sphere.h"
 
 using namespace arma;
 using namespace load;
 using namespace fpo;
+using namespace pso;
 
 int main(int argc, char **argv) {
-	std::cout << "Rodando o Fluxo" << std::endl;
+	/*std::cout << "Rodando o Fluxo" << std::endl;
 	Fpo* f = new Fpo;
 	f->Execute("/home/pc-thiago/eclipse-workspace/LoadFlow/src/data/3bus.txt");
-	delete f;
+	delete f;*/
+	Problem* p = new Sphere();
+	p->SetNVar(5);
+	p->SetVarMin(-10 * ones<vec>(5));
+	p->SetVarMax(10 * ones<vec>(5));
+	p->SetVarSize(zeros<vec>(5));
+	p->SetType(MIN);
+	p->SetVarSize(zeros<vec>(5));
+
+	Pso* pso = new Pso();
+	pso->SetProblem(p);
+	pso->Execute();
+	delete pso;
 	/*cout << "Armadillo version: " << arma_version::as_string() << endl;
 
 	mat A;
