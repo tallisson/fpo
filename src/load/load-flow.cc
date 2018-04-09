@@ -264,7 +264,7 @@ int LoadFlow::Execute() {
 	return m_conv;
 }
 
-void LoadFlow::CalcLosses(void) {
+DataLoss_t LoadFlow::CalcLosses(void) {
 	std::vector<double> p_km, p_mk, q_km, q_mk, pL, losses;
 	m_totalL = 0;
 	std::vector<Branch*> branches = m_graph->GetBranches();
@@ -290,12 +290,10 @@ void LoadFlow::CalcLosses(void) {
 	}
 
 	m_totalL *= m_sts.m_baseMVA;
-	if (m_verbose) {
-		//@ToDo
-	}
-	if (m_verbose) {
-		std::cout << "Perda Total: " << m_totalL << std::endl;
-	}
+
+	DataLoss_t data(p_km, p_mk, q_km, q_mk,losses, m_totalL);
+
+	return data;
 }
 
 void LoadFlow::SetError(double error) {

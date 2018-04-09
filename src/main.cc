@@ -10,11 +10,11 @@ using namespace fpo;
 using namespace pso;
 
 int main(int argc, char **argv) {
-	/*std::cout << "Rodando o Fluxo" << std::endl;
+	std::cout << "Rodando o Fluxo" << std::endl;
 	Fpo* f = new Fpo;
 	f->Execute("/home/pc-thiago/eclipse-workspace/LoadFlow/src/data/3bus.txt");
-	delete f;*/
-	Problem* p = new Sphere();
+	delete f;
+	/*Problem* p = new Sphere();
 	p->SetNVar(5);
 	p->SetVarMin(-10 * ones<vec>(5));
 	p->SetVarMax(10 * ones<vec>(5));
@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 	Pso* pso = new Pso();
 	pso->SetProblem(p);
 	pso->Execute();
-	delete pso;
+	delete pso;*/
 	/*cout << "Armadillo version: " << arma_version::as_string() << endl;
 
 	mat A;

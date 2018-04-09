@@ -9,6 +9,7 @@
 #include "report.h"
 #include "../load/calc.h"
 #include <iostream>
+#include <math.h>
 #include <stdio.h>
 
 using namespace model;
@@ -186,12 +187,14 @@ void Fpo::Execute(std::string cdf) {
 			int size = (int) graph->GetNumBus();
 			for (int i = 0; i < size; i++) {
 				Bus* bus = graph->GetBus(i + 1);
-				if (bus->GetType() != Bus::LOAD && bus->GetType() != Bus::LOSS_CONTROL_REACT) {
+				if (bus->GetType() != Bus::LOAD
+						&& bus->GetType() != Bus::LOSS_CONTROL_REACT) {
 					if (bus->GetVCalc() - m_erro <= bus->GetBus().m_vmin) {
 						if (gradRed(bus->GetOrdG()) >= 0) {
 							gradRed(bus->GetOrdG()) = 0;
 						}
-					} else if (bus->GetVCalc() + m_erro >= bus->GetBus().m_vmax) {
+					} else if (bus->GetVCalc() + m_erro
+							>= bus->GetBus().m_vmax) {
 						if (gradRed(bus->GetOrdG()) <= 0) {
 							gradRed(bus->GetOrdG()) = 0;
 						}
@@ -223,14 +226,17 @@ void Fpo::Execute(std::string cdf) {
 				//cout << "m_w = " << m_w << endl;
 
 				double c = m_co;
-				int numB = (int)graph->GetNumBus();
+				int numB = (int) graph->GetNumBus();
 				Data_t bu = m_calc->Busca(lf, graph, m_w, c, m_erro, dLdu);
 				cout << bu.print() << endl;
 				if (bu.m_conv == 1) {
 					for (int i = 0; i < numB; i++) {
 						Bus* bus = graph->GetBus(i + 1);
-						if (bus->GetType() != Bus::LOAD && bus->GetType() != Bus::LOSS_CONTROL_REACT) {
-							bus->SetVCalc(bus->GetVPreBusca() - bu.m_c * dLdu(bus->GetOrdG()));
+						if (bus->GetType() != Bus::LOAD
+								&& bus->GetType() != Bus::LOSS_CONTROL_REACT) {
+							bus->SetVCalc(
+									bus->GetVPreBusca()
+											- bu.m_c * dLdu(bus->GetOrdG()));
 						} else {
 							bus->SetVCalc(bus->GetVPreBusca());
 						}
@@ -240,17 +246,21 @@ void Fpo::Execute(std::string cdf) {
 
 					for (int i = 0; i < numB; i++) {
 						Bus* bus = graph->GetBus(i + 1);
-						if (bus->GetType() != Bus::LOAD && bus->GetType() != Bus::LOSS_CONTROL_REACT
+						if (bus->GetType() != Bus::LOAD
+								&& bus->GetType() != Bus::LOSS_CONTROL_REACT
 								&& bus->GetVCalc() < bus->GetBus().m_vmin) {
 							bus->SetVCalc(bus->GetBus().m_vmin);
 							if (m_verbose) {
-								printf("\nV%f < V_min! -> V%f = V_min", bus->GetVCalc(), bus->GetVCalc());
+								printf("\nV%f < V_min! -> V%f = V_min",
+										bus->GetVCalc(), bus->GetVCalc());
 							}
-						} else if (bus->GetType() != Bus::LOAD && bus->GetType() != Bus::LOSS_CONTROL_REACT
+						} else if (bus->GetType() != Bus::LOAD
+								&& bus->GetType() != Bus::LOSS_CONTROL_REACT
 								&& bus->GetVCalc() > bus->GetBus().m_vmax) {
 							bus->SetVCalc(bus->GetBus().m_vmax);
 							if (m_verbose) {
-								printf("\nV%f > V_max! -> V%f = V_max", bus->GetVCalc(), bus->GetVCalc());
+								printf("\nV%f > V_max! -> V%f = V_max",
+										bus->GetVCalc(), bus->GetVCalc());
 							}
 						}
 					}
@@ -286,37 +296,94 @@ void Fpo::Execute(std::string cdf) {
 				flag = 2;
 			}
 
-	} else {
-		flag = 3;
+		} else {
+			flag = 3;
+		}
+		printf("Flag = %d AND k = %d", flag, k);
 	}
-	printf("Flag = %d AND k = %d", flag, k);
-}
 
 // Relatório de saída:
-m_verbose = true;
-if (m_verbose) {
-	if (flag == 1) {
-		printf("\n\nO método do Gradiente Reduzido convergiu em %d iterações com E = %.4f", k, m_erro);
-	} else {
-		if (flag == 2) {
+	m_verbose = true;
+	if (m_verbose) {
+		if (flag == 1) {
 			printf(
-					"\n\nO número máximo de iterações do método do Gradiente Reduzido foi atingido...");
-		} else if (flag == 3) {
-			printf(
-					"\n\nO processo foi interrompido porque o problema de Fluxo de Carga (Passo 2) não convergiu...");
+					"\n\nO método do Gradiente Reduzido convergiu em %d iterações com E = %.4f",
+					k, m_erro);
 		} else {
-			printf(
-					"\n\nO processo foi interrompido porque a busca unidimensional não conseguiu determinar um passo descendente...");
+			if (flag == 2) {
+				printf(
+						"\n\nO número máximo de iterações do método do Gradiente Reduzido foi atingido...");
+			} else if (flag == 3) {
+				printf(
+						"\n\nO processo foi interrompido porque o problema de Fluxo de Carga (Passo 2) não convergiu...");
+			} else {
+				printf(
+						"\n\nO processo foi interrompido porque a busca unidimensional não conseguiu determinar um passo descendente...");
+			}
+		}
+
+		if (flag != 3) {
+			Report(lf, k);
+		}
+	}
+}
+
+void Fpo::Report(LoadFlow* lf, int numIt) {
+	printf("\n\nResumo do Relatório de Convergência:");
+	printf("\n\nRelatório de Saída:");
+	printf("\nIteração   V1        V2        FO Mod    Perdas\n");
+	printf("[it]       [p.u.]    [p.u.]    [p.u.]    [p.u.]\n");
+	for (int i = 0; i <= numIt; i++) {
+	  printf("%3d %13.4f %9.4f %9.4f %9.4f\n", i, 0.0, 0.0, m_foMod.at(i),m_perdas.at(i));
+	}
+	printf("\n\nRelatório de Saída:\n");
+	int numB = (int) lf->GetGraph()->GetNumBus();
+	for (int i = 0; i < numB; i++) {
+		Bus* bus = lf->GetGraph()->GetBus(i + 1);
+		bus->Print();
+	}
+
+	// Geração de potência ativa:
+	Bus* slack = lf->GetGraph()->GetSlack();
+	slack->CalcPG();
+
+	// Geração de potência reativa:
+	for (int i = 0; i < numB; i++) {
+		Bus* bus = lf->GetGraph()->GetBus(i + 1);
+
+		if (bus->GetType() != Bus::LOAD
+				|| bus->GetType() != Bus::LOSS_CONTROL_REACT) {
+			bus->CalcQg();
 		}
 	}
 
-	if (flag != 3) {
-		printf("\n\nResumo do Relatório de Convergência:");
-		printf("\n\nRelatório de Saída:");
-		/*Report* rp = new Report();
-		rp->Output(graph);*/
+	// Impressão na tela do relatório de saída:
+
+	printf(
+			"\nBarra   V         ang       ang       Pg        Qg        Pc        Qc\n");
+	printf(
+			"[k]     [p.u.]    [graus]   [rad]     [p.u.]    [p.u.]    [p.u.]    [p.u.]\n");
+	for (int i = 0; i < numB; i++) {
+		Bus* bus = lf->GetGraph()->GetBus(i + 1);
+		printf("%2d %11.4f %9.4f %9.4f %9.4f %9.4f %9.4f %9.4f\n",
+				bus->GetBus().m_nin, bus->GetVCalc(),
+				bus->GetACalc() * (180 / M_PI), bus->GetACalc(),
+				bus->GetPCalc(), bus->GetQCalc(), bus->GetBus().m_pc,
+				bus->GetBus().m_qc);
 	}
-}
+
+	// Cálculo dos fluxos nas linhas de transmissão e perdas ativas:
+	DataLoss_t data = lf->CalcLosses();
+	vec pkm = data.m_pkm;
+	int numD = (int) pkm.size();
+	printf("\n\nPkm       Pmk       Perdas    Qkm       Qmk");
+	printf("\n[p.u.]    [p.u.]    [p.u.]    [p.u.]    [p.u.]\n");
+	for (int i = 0; i < numD; i++) {
+		printf("%6.4f %9.4f %9.4f %9.4f %9.4f\n", pkm.at(i), data.m_pmk.at(i),
+				data.m_l.at(i), data.m_qkm.at(i), data.m_qmk.at(i));
+	}
+
+	printf("Perdas Totais = %.4f [MW]", data.m_total);
 }
 
 }

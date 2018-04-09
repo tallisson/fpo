@@ -27,6 +27,25 @@ using namespace control;
 
 namespace load {
 
+struct dataLoss {
+	vec m_pkm;
+	vec m_pmk;
+	vec m_qkm;
+	vec m_qmk;
+	vec m_l;
+	double m_total;
+
+	dataLoss(vec pkm, vec pmk, vec qkm, vec qmk, vec l, double total) {
+		m_pkm = pkm;
+		m_pmk = pmk;
+		m_qkm = qkm;
+		m_qmk = qmk;
+		m_l = l;
+		m_total = total;
+	}
+};
+typedef dataLoss DataLoss_t;
+
 class LoadFlow {
 private:
 	Graph* m_graph;
@@ -48,8 +67,6 @@ private:
 	void InitX0(void);
 
 	void InitJ(void);
-
-	void CalcLosses(void);
 
 	bool m_verbose;
 	bool m_hasQControl;
@@ -96,6 +113,8 @@ public:
 	Jacobian* GetJac(void) const;
 
 	void SetInit(bool init);
+
+	DataLoss_t CalcLosses(void);
 };
 
 }

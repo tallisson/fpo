@@ -47,6 +47,8 @@ public:
 
 	void Execute(std::string cdf);
 
+	void Report(LoadFlow* lf, int numIt);
+
 private:
 	double m_erro;
 	// Parâmetro de Penalidade
