@@ -331,7 +331,7 @@ void Fpo::Execute(std::string cdf) {
 void Fpo::Report(LoadFlow* lf, int numIt) {
 	printf("\n\nResumo do Relatório de Convergência:");
 	printf("\n\nRelatório de Saída:");
-	printf("\nIteração   V1        V2        FO Mod    Perdas\n");
+	printf("\nIteração   V1       V2        FO Mod    Perdas\n");
 	printf("[it]       [p.u.]    [p.u.]    [p.u.]    [p.u.]\n");
 	for (int i = 0; i <= numIt; i++) {
 	  printf("%3d %13.4f %9.4f %9.4f %9.4f\n", i, 0.0, 0.0, m_foMod.at(i),m_perdas.at(i));
