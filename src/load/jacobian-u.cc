@@ -51,7 +51,7 @@ void JacobianU::CalcDPk(Graph* graph) {
 
 				// dPk em relação a 'vk'.
 				if(busK->GetType() == Bus::GENERATION) {
-					m_jac(k-1, busK->GetOrdG()) =
+					m_jac(k-1, busK->GetOrdG()) +=
 						-2*dataBranch.m_g*busK->GetVCalc() + busM->GetVCalc() *
 						(dataBranch.m_g*cos(theta_km)+dataBranch.m_b*sin(theta_km));
 				}
@@ -83,7 +83,7 @@ void JacobianU::CalcDQk(Graph* graph) {
 
 	            // dQk em relaçao a 'vk'.
 	            if (busK->GetType() == Bus::GENERATION) {
-	            	cout << "index = " << numBus - 1 + busK->GetBus().m_ordPV << endl;
+	            	//cout << "index = " << numBus - 1 + busK->GetBus().m_ordPV << endl;
 	                m_jac(numBus - 1 + busK->GetBus().m_ordPQ, busK->GetOrdG()) +=
 	                	2*(dataBranch.m_b+dataBranch.m_bsh)*busK->GetVCalc() -
 						busM->GetVCalc()*(dataBranch.m_b*cos(theta_km)-dataBranch.m_g*sin(theta_km));

@@ -28,8 +28,8 @@ Fpo::Fpo() {
 	m_verbose = false;
 	lf = new LoadFlow();
 	m_calc = new Calc();
-	m_foMod = zeros(m_maxIter);
-	m_perdas = zeros(m_maxIter);
+	m_foMod = zeros(m_maxIter + 1);
+	m_perdas = zeros(m_maxIter + 1);
 }
 
 Fpo::~Fpo() {
@@ -103,6 +103,8 @@ vec Fpo::GetU(void) const {
 void Fpo::Execute(std::string cdf) {
 	LoadFlow* lf = new LoadFlow;
 	lf->Prepare(cdf);
+
+
 	Graph* graph = lf->GetGraph();
 	Bus* slack = graph->GetSlack();
 
@@ -164,6 +166,10 @@ void Fpo::Execute(std::string cdf) {
 						<< endl;
 			}
 			vec dfdx = m_calc->GrafX(graph, m_w);
+			/*cout.precision(6);
+			cout.setf(ios::fixed);
+			dfdx.raw_print(cout, "DfDx");*/
+
 			vec lamb = inv(trans(jac)) * -dfdx;
 
 			if (m_verbose) {
@@ -171,14 +177,16 @@ void Fpo::Execute(std::string cdf) {
 			}
 
 			vec dLdu = m_calc->GradLU(graph, lamb);
-
+			cout << "dLdu = \n" << dLdu << endl;
 			double fo = m_calc->Fitness(graph, 0);
-			//cout << "Perdas = " << fo << endl;
+			cout << "Perdas = " << fo << endl;
 			if (m_verbose) {
 				cout << "Perdas = " << fo << endl;
 			}
+
 			m_foMod(k) = m_calc->Fitness(graph, m_w);
 			m_perdas(k) = fo;
+
 			//break;
 			int nElem = (int) dLdu.n_rows;
 			vec gradRed = zeros<vec>(nElem);
@@ -240,8 +248,6 @@ void Fpo::Execute(std::string cdf) {
 						} else {
 							bus->SetVCalc(bus->GetVPreBusca());
 						}
-						bus->SetACalc(bus->GetAPreBusca());
-						bus->Print();
 					}
 
 					for (int i = 0; i < numB; i++) {
@@ -263,7 +269,10 @@ void Fpo::Execute(std::string cdf) {
 										bus->GetVCalc(), bus->GetVCalc());
 							}
 						}
+						bus->SetACalc(bus->GetAPreBusca());
+						bus->Print();
 					}
+
 					if (m_verbose) {
 						printf("\n\nVariáveis de controle 'u':");
 						printf("\nBarra    V");

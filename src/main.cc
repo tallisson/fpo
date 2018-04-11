@@ -12,7 +12,7 @@ using namespace pso;
 int main(int argc, char **argv) {
 	std::cout << "Rodando o Fluxo" << std::endl;
 	Fpo* f = new Fpo;
-	f->Execute("/home/pc-thiago/eclipse-workspace/LoadFlow/data/3bus.txt");
+	f->Execute("/home/pc-thiago/eclipse-workspace/LoadFlow/data/5bus.txt");
 	delete f;
 	/*Problem* p = new Sphere();
 	p->SetNVar(5);

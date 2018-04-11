@@ -91,9 +91,11 @@ void LoadFlow::Prepare(std::string cdf) {
 		DBus_t busData = m_sts.buses.at(i);
 		bus->SetBus(busData);
 		m_graph->AddBus(bus);
+
 		if (m_verbose) {
 			bus->Print();
 		}
+
 	}
 	if (m_verbose) {
 		cout << "Dados dos Branches " << size << std::endl;
@@ -118,6 +120,7 @@ void LoadFlow::Prepare(std::string cdf) {
 			busNi->SetTap(Bus::TAP);
 			busNf->SetTap(Bus::IMP);
 		}
+
 		if (m_verbose) {
 			branch->Print();
 		}

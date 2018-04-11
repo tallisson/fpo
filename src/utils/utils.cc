@@ -155,9 +155,9 @@ Sts_t Utils::Read(string filename) {
 
 		if (bus.m_tipo == 3 || bus.m_tipo == 2) {
 			// Geração reativa máxima:
-			bus.m_qgmax = atof(line.substr(90, 7).c_str()) / m_s.m_baseMVA;
+			bus.m_qgmax = atof(line.substr(90, 9).c_str()) / m_s.m_baseMVA;
 			// Geração reativa mínima:
-			bus.m_qgmin = atof(line.substr(98, 7).c_str()) / m_s.m_baseMVA;
+			bus.m_qgmin = atof(line.substr(100, 9).c_str()) / m_s.m_baseMVA;
 
 			if (bus.m_qgmax == 0 && bus.m_qgmin == 0) {
 				bus.m_qgmax = 999.9999;
@@ -167,8 +167,8 @@ Sts_t Utils::Read(string filename) {
 			//bus.m_vmax = VMAX;
 			// Magnitude de tensão mínima:
 			//bus.m_vmin = VMIN;
-			bus.m_vmax = atof(line.substr(90, 7).c_str());
-			bus.m_vmin = atof(line.substr(98, 7).c_str());
+			bus.m_vmax = atof(line.substr(90, 9).c_str());
+			bus.m_vmin = atof(line.substr(100, 9).c_str());
 		} else if (bus.m_tipo == 1) {
 			// Geração reativa máxima:
 			bus.m_qgmax = 0.0;
@@ -205,8 +205,8 @@ Sts_t Utils::Read(string filename) {
 			// Geração reativa mínima:
 			bus.m_qgmin = 0.0;
 
-			bus.m_vmax = atof(line.substr(90, 7).c_str());
-			bus.m_vmin = atof(line.substr(98, 7).c_str());
+			bus.m_vmax = atof(line.substr(90, 9).c_str());
+			bus.m_vmin = atof(line.substr(100, 9).c_str());
 		}
 
 		// Condutância do shunt de barra:

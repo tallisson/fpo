@@ -47,6 +47,7 @@ vec Calc::GrafX(Graph* graph, double w) {
 				// y(k-1) = y(k-1) + 2*g(km)*V(k)*V(m)*sin(akm);
 				y(busK->GetBus().m_ord) += 2 * dataBranch.m_g * busK->GetVCalc()
 						* busM->GetVCalc() * sin(theta_km);
+				//cout << "y(" << busK->GetBus().m_ord << ") = " << y(busK->GetBus().m_ord) << endl;
 			}
 		}
 	}
@@ -74,6 +75,7 @@ vec Calc::GrafX(Graph* graph, double w) {
 			if (busK->GetVCalc() < busK->GetBus().m_vmin) {
 				y(graph->GetNumBus() - 1 + busK->GetBus().m_ordPQ) += 2 * w
 						* (busK->GetVCalc() - busK->GetBus().m_vmin);
+				cout << "Meus ovos" << endl;
 				//y(nb-1+ordPQ(k)) = y(nb-1+ordPQ(k)) + 2*w*(V(k)-V_min(k));
 			} else if (busK->GetVCalc() > busK->GetBus().m_vmax) {
 				y(graph->GetNumBus() - 1 + busK->GetBus().m_ordPQ) += 2 * w
