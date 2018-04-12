@@ -48,18 +48,27 @@ void JacobianU::CalcDPk(Graph* graph) {
 				Branch* branch = branches.at(m);
 				DBranch_t dataBranch = branch->GetBranch();
 				double theta_km = busK->GetACalc() - busM->GetACalc();
-
+				double vK = busK->GetVCalc();
+				double vM = busM->GetVCalc();
+				double tap = dataBranch.m_tap;
+				int indexK = busK->GetBus().m_ord;
 				// dPk em relação a 'vk'.
 				if(busK->GetType() == Bus::GENERATION) {
-					m_jac(k-1, busK->GetOrdG()) +=
-						-2*dataBranch.m_g*busK->GetVCalc() + busM->GetVCalc() *
-						(dataBranch.m_g*cos(theta_km)+dataBranch.m_b*sin(theta_km));
+					if (dataBranch.m_tipo == 1 && busK->GetTap() == Bus::TAP) {
+						m_jac(indexK, busK->GetOrdG()) +=
+							-2*dataBranch.m_g * (1/tap) * vK + (1/tap) * vM *
+							(dataBranch.m_g*cos(theta_km)+dataBranch.m_b*sin(theta_km));
+					} else {
+						m_jac(indexK, busK->GetOrdG()) +=
+							-2*dataBranch.m_g * vK + (1/tap) * vM *
+							(dataBranch.m_g*cos(theta_km)+dataBranch.m_b*sin(theta_km));
+					}
 				}
 
 	            // dPk em relação a 'vm'.
 				if(busM->GetType() != Bus::LOAD) {
-					m_jac(k-1, busM->GetOrdG()) =
-						busK->GetVCalc() * (dataBranch.m_g * cos(theta_km) + dataBranch.m_b * sin(theta_km));
+					m_jac(indexK, busM->GetOrdG()) =
+						vK * (dataBranch.m_g * cos(theta_km) + dataBranch.m_b * sin(theta_km));
 				}
 			}
 		}
@@ -79,20 +88,30 @@ void JacobianU::CalcDQk(Graph* graph) {
 				Bus* busM = neighbors.at(m);
 				Branch* branch = branches.at(m);
 				DBranch_t dataBranch = branch->GetBranch();
+				double vK = busK->GetVCalc();
+				double vM = busM->GetVCalc();
+				double tap = dataBranch.m_tap;
 				double theta_km = busK->GetACalc() - busM->GetACalc();
 
 	            // dQk em relaçao a 'vk'.
 	            if (busK->GetType() == Bus::GENERATION) {
 	            	//cout << "index = " << numBus - 1 + busK->GetBus().m_ordPV << endl;
-	                m_jac(numBus - 1 + busK->GetBus().m_ordPQ, busK->GetOrdG()) +=
-	                	2*(dataBranch.m_b+dataBranch.m_bsh)*busK->GetVCalc() -
-						busM->GetVCalc()*(dataBranch.m_b*cos(theta_km)-dataBranch.m_g*sin(theta_km));
+	            	if (dataBranch.m_tipo == 1 && busK->GetTap() == Bus::TAP) {
+						m_jac(numBus - 1 + busK->GetBus().m_ordPQ, busK->GetOrdG()) +=
+							2*(pow((1 / tap), 2) * dataBranch.m_b + dataBranch.m_bsh)*vK -
+							(1 / tap) * vM * (dataBranch.m_b*cos(theta_km)-dataBranch.m_g*sin(theta_km));
+	            	} else {
+	            		m_jac(numBus - 1 + busK->GetBus().m_ordPQ, busK->GetOrdG()) +=
+							2*(dataBranch.m_b + dataBranch.m_bsh)*vK -
+							(1 / tap) * vM * (dataBranch.m_b*cos(theta_km)-dataBranch.m_g*sin(theta_km));
+	            	}
 	            }
 
 	            // dQk em relacao a 'vm'.
 	            if (busM->GetType() != Bus::LOAD) {
 	                m_jac((numBus - 1 + busK->GetBus().m_ordPQ), busM->GetOrdG()) =
-	                		-busK->GetVCalc()*(dataBranch.m_b*cos(theta_km)-dataBranch.m_g*sin(theta_km));
+	                		-(1 / tap) * vK *
+							(dataBranch.m_b*cos(theta_km)-dataBranch.m_g*sin(theta_km));
 	            }
 			}
 

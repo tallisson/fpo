@@ -40,11 +40,16 @@ void Mismatch::CalcPkB(Graph* graph) {
 			vM = busM->GetVCalc();
 			aK = busK->GetACalc();
 			aM = busM->GetACalc();
+			double tap = dataBranch.m_tap;
 
 			double theta_km = aK - aM;
-
-			m_mis(k) -= (dataBranch.m_g * pow(vK, 2) - vK * vM * (
+			if(dataBranch.m_tipo == 1 && busK->GetTap() == Bus::TAP) {
+				m_mis(k) -= (dataBranch.m_g * pow(1/tap, 2) * pow(vK, 2) - (1/tap) * vK * vM * (
 					dataBranch.m_g * cos(theta_km) + dataBranch.m_b * sin(theta_km) ) );
+			} else {
+				m_mis(k) -= (dataBranch.m_g * pow(vK, 2) - (1/tap) * vK * vM * (
+					dataBranch.m_g * cos(theta_km) + dataBranch.m_b * sin(theta_km) ) );
+			}
 		}
 	}
 }
@@ -73,9 +78,14 @@ void Mismatch::CalcQkB(Graph* graph) {
 				aK = busK->GetACalc();
 				aM = busM->GetACalc();
 				double theta_km = aK - aM;
-
-				m_mis(index) -= ( -(dataBranch.m_b + dataBranch.m_bsh)* pow(vK, 2) + vK * vM *
+				double tap = dataBranch.m_tap;
+				if(dataBranch.m_tipo == 1 && busK->GetTap() == Bus::TAP) {
+					m_mis(index) -= ( -(dataBranch.m_b * pow(1/tap, 2) + dataBranch.m_bsh)* pow(vK, 2) + vK * vM *
 								( dataBranch.m_b * cos(theta_km) - dataBranch.m_g * sin(theta_km) ) );
+				} else {
+					m_mis(index) -= ( -(dataBranch.m_b + dataBranch.m_bsh)* pow(vK, 2) + vK * vM *
+								( dataBranch.m_b * cos(theta_km) - dataBranch.m_g * sin(theta_km) ) );
+				}
 			}
 		}
 	}
