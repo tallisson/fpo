@@ -95,7 +95,7 @@ void LoadFlow::Prepare(std::string cdf) {
 		if (m_verbose) {
 			bus->Print();
 		}
-
+		//bus->Print();
 	}
 	if (m_verbose) {
 		cout << "Dados dos Branches " << size << std::endl;
@@ -124,6 +124,7 @@ void LoadFlow::Prepare(std::string cdf) {
 		if (m_verbose) {
 			branch->Print();
 		}
+		//branch->Print();
 	}
 }
 
@@ -167,12 +168,22 @@ int LoadFlow::Execute() {
 	mat m;
 
 	bool execute = false;
+	bool crt = false;
 	uint32_t nextIter, nextCrt;
 	nextCrt = 0;
 	do {
 		nextIter = 0;
 		m_iter = 0;
 		while (nextIter == 0) {
+			// Qlim
+			crt = false;
+			if (m_hasQControl == true) {
+				crt = m_qControl->DoRestore(m_graph);
+				if (crt == true) {
+					InitJ();
+				}
+			}
+
 			m = m_jac->CalcJac(m_graph);
 			vec dx = m_jac->SolveSys(m_b);
 			int numB = (int) m_graph->GetNumBus();
@@ -192,17 +203,11 @@ int LoadFlow::Execute() {
 					bus->SetVCalc(vD);
 				}
 			}
-			bool crt = false;
-			if (m_hasQControl == true) {
-				crt = m_qControl->DoRestore(m_graph);
-				if (crt == true) {
-					InitJ();
-				}
-			}
 			m_iter++;
 
 			// Qlim
-			std::cout << "Iter " << m_iter << std::endl;
+			//std::cout << "Iter " << m_iter << std::endl;
+			crt = false;
 			if (m_hasQControl == true) {
 				crt = m_qControl->DoControl(m_graph);
 				if (crt == true) {
@@ -256,8 +261,8 @@ int LoadFlow::Execute() {
 		}
 	} while (execute);
 	if (nextIter == 1) {
-		std::cout << "O método de Newton-Raphson convergiu em " << m_iter
-				<< " iterações" << std::endl;
+		/*std::cout << "O método de Newton-Raphson convergiu em " << m_iter
+				<< " iterações" << std::endl;*/
 	} else {
 		std::cout
 				<< "O número máximo de iterações foi atingido e o método de Newton-Raphson não convergiu..."

@@ -104,9 +104,14 @@ void Fpo::Execute(std::string cdf) {
 	LoadFlow* lf = new LoadFlow;
 	lf->Prepare(cdf);
 
-
 	Graph* graph = lf->GetGraph();
 	Bus* slack = graph->GetSlack();
+	/*for(int i = 0; i < graph->GetNumBus(); i++) {
+		Bus* bus = graph->GetBus(i + 1);
+		if(bus->GetType() != Bus::LOAD && bus->GetType() != Bus::LOSS_CONTROL_REACT) {
+			bus->SetVCalc(1.0);
+		}
+	}*/
 
 	if (m_verbose) {
 		printf("w = %.4f \n", m_w);
@@ -148,14 +153,15 @@ void Fpo::Execute(std::string cdf) {
 		}
 
 		int conv = lf->Execute();
+		//m_verbose = true;
 		if (m_verbose) {
 			for (int i = 1; i <= size; i++) {
 				Bus* bus = graph->GetBus(i);
-				printf("%.10f\t", bus->GetVCalc());
+				printf("%.12f\n", bus->GetVCalc());
 			}
-
 			printf("\n");
 		}
+		//m_verbose = false;
 
 		if (conv == 1) {
 			lf->GetJac()->Zeros(graph);
@@ -168,10 +174,11 @@ void Fpo::Execute(std::string cdf) {
 			vec dfdx = m_calc->GrafX(graph, m_w);
 			/*cout.precision(6);
 			cout.setf(ios::fixed);
-			dfdx.raw_print(cout, "DfDx");*/
-
+			dfdx.raw_print(cout, "DfDx");
+			return;*/
 			vec lamb = inv(trans(jac)) * -dfdx;
-
+			cout << "Lamb = " << lamb;
+			//return;
 			if (m_verbose) {
 				cout << "Cálculo do gradiente reduzido:\n";
 			}
@@ -361,7 +368,7 @@ void Fpo::Report(LoadFlow* lf, int numIt) {
 		Bus* bus = lf->GetGraph()->GetBus(i + 1);
 
 		if (bus->GetType() != Bus::LOAD
-				|| bus->GetType() != Bus::LOSS_CONTROL_REACT) {
+				&& bus->GetType() != Bus::LOSS_CONTROL_REACT) {
 			bus->CalcQg();
 		}
 	}

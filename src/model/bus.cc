@@ -239,10 +239,8 @@ double Bus::CalcPG(void) {
 
 		double theta_km = this->GetACalc() - busM->GetACalc();
 		//Pg = Pg + (gkm(km)*V(slack)^2 - V(slack)*V(m)*(gkm(km)*cos(akm)+bkm(km)*sin(akm)));
-		pg += (dataBranch.m_g * pow(this->GetVCalc(), 2)
-				- this->GetVCalc() * busM->GetVCalc()
-						* (dataBranch.m_g * cos(theta_km)
-								+ dataBranch.m_b * sin(theta_km)));
+		pg += (dataBranch.m_g * pow(this->GetVCalc(), 2) - this->GetVCalc() * busM->GetVCalc()
+			  * (dataBranch.m_g * cos(theta_km) + dataBranch.m_b * sin(theta_km)));
 		this->SetPCalc(pg);
 	}
 	return pg;

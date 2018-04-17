@@ -35,8 +35,20 @@ struct aresta {
 	aresta(int k, int m) : m_k(k), m_m(m){}
 	int m_k;
 	int m_m;
+
+	bool equals(aresta rhs) {
+		if(m_k == rhs.m_k && m_m == rhs.m_m) {
+			return true;
+		}
+		if(m_k == rhs.m_m && m_m == rhs.m_k) {
+			return true;
+		}
+		return false;
+	}
 };
 typedef aresta Aresta_t;
+
+
 class Calc {
 public:
 	Calc();

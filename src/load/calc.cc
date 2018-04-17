@@ -75,7 +75,6 @@ vec Calc::GrafX(Graph* graph, double w) {
 			if (busK->GetVCalc() < busK->GetBus().m_vmin) {
 				y(graph->GetNumBus() - 1 + busK->GetBus().m_ordPQ) += 2 * w
 						* (busK->GetVCalc() - busK->GetBus().m_vmin);
-				cout << "Meus ovos" << endl;
 				//y(nb-1+ordPQ(k)) = y(nb-1+ordPQ(k)) + 2*w*(V(k)-V_min(k));
 			} else if (busK->GetVCalc() > busK->GetBus().m_vmax) {
 				y(graph->GetNumBus() - 1 + busK->GetBus().m_ordPQ) += 2 * w
@@ -135,23 +134,34 @@ vec Calc::GradFU(Graph* graph) {
 double Calc::Fitness(Graph* graph, double w) {
 	// Cálculo da função objetivo:
 	double fitness = 0;
-	std::set<int> list;
-
+	//std::set<int> list;
+	std::vector<Aresta_t> lista;
 	int numBus = (int) graph->GetNumBus();
 	double v2 = graph->GetBus(2)->GetVCalc();
 	for (int k = 0; k < numBus; k++) {
 		Bus* busK = graph->GetBus(k + 1);
-		list.insert(k + 1);
+		//list.insert(k + 1);
 		std::vector<Branch*> branches = busK->GetBranches();
 		std::vector<Bus*> neighbors = busK->GetNeighbors();
 		int numBranch = (int) branches.size();
 
 		for (int m = 0; m < numBranch; m++) {
 			Bus* busM = neighbors.at(m);
-			std::set<int>::iterator it = list.find(busM->GetBus().m_nin);
-			if (it != list.end()) {
+			//std::set<int>::iterator it = list.find(busM->GetBus().m_nin);
+			Aresta_t list0(busK->GetBus().m_nin, busM->GetBus().m_nin);
+			Aresta_t list1(busM->GetBus().m_nin, busK->GetBus().m_nin);
+			bool flag = false;
+			for(int i = 0; i < lista.size(); i++) {
+				if(lista.at(i).equals(list0) || lista.at(i).equals(list1)) {
+					flag = true;
+					break;
+				}
+			}
+			if (flag) {
 				continue;
 			}
+			lista.push_back(list0);
+			lista.push_back(list1);
 			DBranch_t dataBranch = branches.at(m)->GetBranch();
 
 			// TRANSMISSION_LINE = 0
@@ -159,9 +169,6 @@ double Calc::Fitness(Graph* graph, double w) {
 				double theta_km = busK->GetACalc() - busM->GetACalc();
 				fitness = fitness + dataBranch.m_g * ( pow(busK->GetVCalc(), 2)
 						  + pow(busM->GetVCalc(), 2) - 2 * busK->GetVCalc()* busM->GetVCalc() * cos(theta_km) );
-				if(v2 > 1.10) {
-					cout << "Fitness " << fitness << " AND " << busK->GetACalc() << endl;
-				}
 			}
 		}
 	}
@@ -174,8 +181,8 @@ double Calc::Fitness(Graph* graph, double w) {
 			fitness = fitness + w * pow((bus->GetVCalc() - dataBus.m_vmax), 2);
 		}
 	}
-	list.clear();
-
+	//list.clear();
+	lista.clear();
 	return fitness;
 }
 

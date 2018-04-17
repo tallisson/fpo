@@ -35,7 +35,7 @@ bool QControl::DoControl(Graph* graph) {
 			double qg = 0;
 			std::vector<Branch*> branches = busK->GetBranches();
 			std::vector<Bus*> neighbors = busK->GetNeighbors();
-			int size = (int)branches.size();
+			int size = (int) branches.size();
 			for (int i = 0; i < size; i++) {
 				DBranch_t dataBranch = branches.at(i)->GetBranch();
 				Bus* busM = neighbors.at(i);
@@ -70,18 +70,9 @@ bool QControl::DoControl(Graph* graph) {
 					 * s.bus.v(k)*s.bus.v(m)*(s.branch.b(km)*cos(akm + s.branch.def(km)) -
 					 * s.branch.g(km)*sin(akm + s.branch.def(km)))) + s.bus.qg(k);
 					 */
-					qg =
-							(-(dataBranch.m_b) * pow(vK, 2)
-									+ (1 / dataBranch.m_tap) * vK * vM
-											* (dataBranch.m_b
-													* cos(
-															theta_km
-																	+ dataBranch.m_def)
-													- dataBranch.m_g
-															* sin(
-																	theta_km
-																			+ dataBranch.m_def)))
-									+ qg;
+					qg = (-(dataBranch.m_b) * pow(vK, 2) + (1 / dataBranch.m_tap) * vK * vM
+						* (dataBranch.m_b * cos(theta_km + dataBranch.m_def) - dataBranch.m_g
+						* sin(theta_km+ dataBranch.m_def))) + qg;
 				}
 			}
 
@@ -91,16 +82,18 @@ bool QControl::DoControl(Graph* graph) {
 			qg = -busK->GetBus().m_bsh * pow(vK, 2) + busK->GetBus().m_qc + qg;
 			/*std::cout << "Bus" << busK->GetBus ().m_nin << ", Qg = " << qg << ", qgMin = " << busK->GetBus ().m_qgmin <<
 			 ", qgMax = " << busK->GetBus ().m_qgmax << ", ThetaK = " << aK.Get () << std::endl;*/
-			if (busK->GetBus().m_nin == 2) {
+			/*if (busK->GetBus().m_nin == 2) {
 				std::cout << "Qg = " << qg << std::endl;
-			}
+			}*/
 			if (qg < busK->GetBus().m_qgmin) {
 				qg = busK->GetBus().m_qgmin;
 				busK->SetType(Bus::LOSS_CONTROL_REACT);
+				busK->SetVCalc(1.0);
 				update = true;
 			} else if (qg > busK->GetBus().m_qgmax) {
 				qg = busK->GetBus().m_qgmax;
 				busK->SetType(Bus::LOSS_CONTROL_REACT);
+				busK->SetVCalc(1.0);
 				update = true;
 			}
 
@@ -125,17 +118,17 @@ bool QControl::DoRestore(Graph* graph) {
 			vK = busK->GetVCalc();
 			qgK = busK->GetQCalc();
 			if (qgK == busK->GetBus().m_qgmin && vK <= busK->GetBus().m_v) {
-				std::cout << "Min = " << vK << ", " << busK->GetBus().m_v
-						<< std::endl;
+				//std::cout << "Min = " << vK << ", " << busK->GetBus().m_vmin << std::endl;
 				busK->SetQCalc(0);
+				busK->SetVCalc(busK->GetBus().m_v);
 				busK->SetType(Bus::GENERATION);
 				update = true;
 			}
 
 			if (qgK == busK->GetBus().m_qgmax && vK >= busK->GetBus().m_v) {
-				std::cout << "Max = " << vK << ", " << busK->GetBus().m_v
-						<< std::endl;
+				//std::cout << "Max = " << vK << ", " << busK->GetBus().m_v << std::endl;
 				busK->SetQCalc(0);
+				busK->SetVCalc(busK->GetBus().m_v);
 				busK->SetType(Bus::GENERATION);
 				update = true;
 			}
