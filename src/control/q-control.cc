@@ -77,7 +77,6 @@ bool QControl::DoControl(Graph* graph) {
 			}
 
 			double vK = busK->GetVCalc();
-			busK->GetACalc();
 			// s.bus.qg(k) = - s.bus.bsh(k)*s.bus.v(k)^2 + s.bus.qc(k) + s.bus.qg(k);
 			qg = -busK->GetBus().m_bsh * pow(vK, 2) + busK->GetBus().m_qc + qg;
 			/*std::cout << "Bus" << busK->GetBus ().m_nin << ", Qg = " << qg << ", qgMin = " << busK->GetBus ().m_qgmin <<
@@ -85,18 +84,18 @@ bool QControl::DoControl(Graph* graph) {
 			/*if (busK->GetBus().m_nin == 2) {
 				std::cout << "Qg = " << qg << std::endl;
 			}*/
+
 			if (qg < busK->GetBus().m_qgmin) {
 				qg = busK->GetBus().m_qgmin;
 				busK->SetType(Bus::LOSS_CONTROL_REACT);
-				busK->SetVCalc(1.0);
+				//busK->SetVCalc(1.0);
 				update = true;
-			} else if (qg > busK->GetBus().m_qgmax) {
+			} else if (qg > busK->GetBus().m_qgmax) {;
 				qg = busK->GetBus().m_qgmax;
 				busK->SetType(Bus::LOSS_CONTROL_REACT);
-				busK->SetVCalc(1.0);
+				//busK->SetVCalc(1.0);
 				update = true;
 			}
-
 			busK->SetQCalc(qg);
 		}
 	}

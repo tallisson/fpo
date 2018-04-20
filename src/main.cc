@@ -1,9 +1,11 @@
 #include "iostream"
-#include "armadillo"
+#include <armadillo>
 #include "fpo/fpo.h"
 #include "pso/pso.h"
 #include "pso/sphere.h"
 #include "optmization/fpo-pso.h"
+#include "fpo/fpo-reactive.h"
+
 #include <set>
 
 using namespace arma;
@@ -15,24 +17,15 @@ using namespace opt;
 
 int main(int argc, char **argv) {
 	std::cout << "Rodando o Fluxo" << std::endl;
-	//FpoPso* f = new FpoPso;
-	//f->Execute("/home/pc-thiago/eclipse-workspace/LoadFlow/data/6bus.txt");
-	//Fpo* f = new Fpo;
-	//f->Execute("/home/pc-thiago/eclipse-workspace/LoadFlow/data/6bus.txt");
-	//delete f;
-	/*Problem* p = new Sphere();
-	p->SetNVar(5);
-	p->SetVarMin(-10 * ones<vec>(5));
-	p->SetVarMax(10 * ones<vec>(5));
-	p->SetVarSize(zeros<vec>(5));
-	p->SetType(MIN);
-	p->SetVarSize(zeros<vec>(5));
 
-	Pso* pso = new Pso();
-	pso->SetProblem(p);
-	pso->Execute();
-	delete pso;*/
-	FpoPso* f = new FpoPso();
+	/*FpoPso* f = new FpoPso();
 	f->Execute("/home/pc-thiago/eclipse-workspace/LoadFlow/data/6bus.txt");
+	delete f;
+	f = 0;*/
+
+	FpoReactive* f = new FpoReactive();
+	f->Execute("/home/pc-thiago/eclipse-workspace/LoadFlow/data/6bus.txt");
+	delete f;
+	f = 0;
 	return 1;
 }

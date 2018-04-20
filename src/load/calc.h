@@ -63,6 +63,7 @@ public:
 	void IsVerbose(bool verbose);
 private:
 	bool m_verbose;
+	int m_maxIt;
 };
 
 }

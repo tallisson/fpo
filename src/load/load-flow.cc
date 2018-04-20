@@ -166,7 +166,6 @@ int LoadFlow::Execute() {
 		//cout << "Error: \n" << m_b << endl;
 	}
 	mat m;
-
 	bool execute = false;
 	bool crt = false;
 	uint32_t nextIter, nextCrt;
@@ -211,6 +210,7 @@ int LoadFlow::Execute() {
 			if (m_hasQControl == true) {
 				crt = m_qControl->DoControl(m_graph);
 				if (crt == true) {
+					cout << "QControl " << endl;
 					InitJ();
 				}
 			}

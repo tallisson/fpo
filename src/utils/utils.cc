@@ -168,19 +168,19 @@ Sts_t Utils::Read(string filename) {
 				if(bus.m_qgmin == 0) {
 					bus.m_qgmin = -999.9999;
 				}
-				bus.m_vmax = 1.5;
-				bus.m_vmin = 0.65;
+				bus.m_vmax = 1.05;
+				bus.m_vmin = 0.95;
 			} else {
 				bus.m_vmax = atof(line.substr(90, 9).c_str());
 				bus.m_vmin = atof(line.substr(100, 9).c_str());
 				if(bus.m_vmax == 0) {
-					bus.m_vmax = 999.9999;
+					bus.m_vmax = 1.05;
 				}
 				if(bus.m_vmin == 0) {
-					bus.m_vmax = -999.9999;
+					bus.m_vmax = 0.95;
 				}
-				bus.m_qgmax = 1.5;
-				bus.m_qgmin = 0.65;
+				bus.m_qgmax = 999.9;
+				bus.m_qgmin = -999.9;
 			}
 			// Magnitude de tensão máxima:
 			//bus.m_vmax = VMAX;
@@ -197,7 +197,7 @@ Sts_t Utils::Read(string filename) {
 			// Magnitude de tensão máxima:
 			bus.m_vmax = atof(line.substr(90, 9).c_str());
 			if(bus.m_vmax == 0) {
-				bus.m_vmax = 1.045;
+				bus.m_vmax = 1.05;
 			}
 			bus.m_vmin = atof(line.substr(100, 9).c_str());
 			if(bus.m_vmin == 0) {

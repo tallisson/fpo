@@ -17,6 +17,7 @@ namespace load {
 Calc::Calc() {
 	// TODO Auto-generated constructor stub
 	m_verbose = false;
+	m_maxIt = 50;
 }
 
 Calc::~Calc() {
@@ -137,7 +138,7 @@ double Calc::Fitness(Graph* graph, double w) {
 	//std::set<int> list;
 	std::vector<Aresta_t> lista;
 	int numBus = (int) graph->GetNumBus();
-	double v2 = graph->GetBus(2)->GetVCalc();
+
 	for (int k = 0; k < numBus; k++) {
 		Bus* busK = graph->GetBus(k + 1);
 		//list.insert(k + 1);
@@ -170,6 +171,8 @@ double Calc::Fitness(Graph* graph, double w) {
 				fitness = fitness + dataBranch.m_g * ( pow(busK->GetVCalc(), 2)
 						  + pow(busM->GetVCalc(), 2) - 2 * busK->GetVCalc()* busM->GetVCalc() * cos(theta_km) );
 			}
+			cout << "Fitness = " << fitness << " AND v(k) = " << busK->GetVCalc() <<
+					" AND v(m) = " << busM->GetVCalc() << endl;
 		}
 	}
 	for (int i = 0; i < numBus; i++) {
@@ -181,6 +184,7 @@ double Calc::Fitness(Graph* graph, double w) {
 			fitness = fitness + w * pow((bus->GetVCalc() - dataBus.m_vmax), 2);
 		}
 	}
+	cout << "Fitness = " << fitness << endl;
 	//list.clear();
 	lista.clear();
 	return fitness;
@@ -193,7 +197,7 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 	double ro = 2;
 	double min_c = 1e-6;
 	double max_c = 5;
-	double cont = 0;
+	int cont = 0;
 	//Bus* slack = graph->GetSlack();
 
 	// Cálculo da função objetivo modificada no ponto atual:
@@ -241,15 +245,12 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 		// Correção dos limites violados:
 		for (int k = 0; k < numBus; k++) {
 			Bus* bus = graph->GetBus(k + 1);
-			if (bus->GetType() != Bus::LOAD) {
+			if (bus->GetType() == Bus::GENERATION || bus->GetType() == Bus::SLACK) {
 				if (bus->GetVCalc() < bus->GetBus().m_vmin) {
 					bus->SetVCalc(bus->GetBus().m_vmin);
 				} else if (bus->GetVCalc() > bus->GetBus().m_vmax) {
 					bus->SetVCalc(bus->GetBus().m_vmax);
 				}
-			}
-			if(cont == 5) {
-				printf("%.12f\n", bus->GetVCalc());
 			}
 		}
 
@@ -262,8 +263,8 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 
 			// Cálculo da função objetivo modificada no ponto candidato a ponto ótimo:
 			double fo2 = Fitness(graph, w);
-			cout << "Fo1 = " << fo1 << endl;
-			cout << "Fo2 = " << fo2 << endl;
+			printf("Fo1 = %.12f\n", fo1);
+			printf("Fo2 = %.12f\n", fo2);
 			cout << "Cont = " << cont << endl;
 			m_verbose = true;
 			if (m_verbose) {
@@ -297,6 +298,11 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 			printf("\nc = %.4f\n", c);
 		}
 		cont++;
+
+		if(cont == m_maxIt) {
+			y.m_conv = 0;
+			return y;
+		}
 	}
 	printf("C = %.12f, Flag 1 = %d, Flag 2 = %d, Flag 3 = %d\n", c, flag1, flag2, flag3);
 	y.m_c = c;
@@ -306,7 +312,6 @@ Data_t Calc::Busca(LoadFlow* lf, Graph* graph, double w, double c, double erro,
 	} else {
 		y.m_conv = 0;
 	}
-
 	//printf("Conv = %.12f AND c = %.12f\n", y.m_conv, y.m_c);
 	return y;
 }
